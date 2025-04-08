@@ -1,6 +1,7 @@
 import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
 import type { ChatSettings } from "@/types"
 import { GoogleGenAI } from "@google/genai"
+import type { GoogleLLMID } from "@/types/llms"
 
 export const runtime = "edge"
 
@@ -23,6 +24,16 @@ interface RequestBody {
   messages: ChatMessage[]
 }
 
+// Valid Gemini model IDs
+const VALID_GEMINI_MODELS = [
+  "gemini-1.0-pro",
+  "gemini-pro-vision",
+  "gemini-1.5-pro-latest",
+  "gemini-1.5-flash-latest", 
+  "gemini-2.5-pro-latest",
+  "gemini-2.0-flash-latest"
+]
+
 export async function POST(request: Request) {
   const json = await request.json()
   const { chatSettings, messages } = json as RequestBody
@@ -37,6 +48,11 @@ export async function POST(request: Request) {
 
     if (!Array.isArray(messages)) {
       throw new Error("Expected messages to be an array")
+    }
+
+    // Validate model name
+    if (!chatSettings.model || !VALID_GEMINI_MODELS.includes(chatSettings.model as GoogleLLMID)) {
+      throw new Error(`Invalid Gemini model name: ${chatSettings.model}. Valid models are: ${VALID_GEMINI_MODELS.join(", ")}`)
     }
 
     // Convert messages to the format expected by the Google API
@@ -80,37 +96,42 @@ export async function POST(request: Request) {
       throw new Error("Expected at least one message")
     }
 
-    // Generate content stream with the correct parameters format for v0.7.0
-    const streamResult = await ai.models.generateContentStream({
-      model: chatSettings.model,
-      contents: contents,
-      // Use the recommended structure according to official documentation
-      config: {
-        temperature: chatSettings.temperature
-      }
-    })
-
-    // Stream is the AsyncGenerator itself in the new API
-    const encoder = new TextEncoder()
-    const readableStream = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const chunk of streamResult) {
-            if (chunk.text) {
-              controller.enqueue(encoder.encode(chunk.text))
-            }
-          }
-          controller.close()
-        } catch (error) {
-          console.error("Error processing stream:", error)
-          controller.error(error)
+    try {
+      // Generate content stream with the correct parameters format for v0.7.0
+      const streamResult = await ai.models.generateContentStream({
+        model: chatSettings.model,
+        contents: contents,
+        // Use the recommended structure according to official documentation
+        config: {
+          temperature: chatSettings.temperature
         }
-      }
-    })
+      })
 
-    return new Response(readableStream, {
-      headers: { "Content-Type": "text/plain" }
-    })
+      // Stream is the AsyncGenerator itself in the new API
+      const encoder = new TextEncoder()
+      const readableStream = new ReadableStream({
+        async start(controller) {
+          try {
+            for await (const chunk of streamResult) {
+              if (chunk.text) {
+                controller.enqueue(encoder.encode(chunk.text))
+              }
+            }
+            controller.close()
+          } catch (error) {
+            console.error("Error processing stream:", error)
+            controller.error(error)
+          }
+        }
+      })
+
+      return new Response(readableStream, {
+        headers: { "Content-Type": "text/plain" }
+      })
+    } catch (streamError) {
+      console.error("Error generating content stream:", streamError)
+      throw streamError
+    }
   } catch (error: unknown) {
     console.error("Error occurred:", error)
 
@@ -138,7 +159,7 @@ export async function POST(request: Request) {
       errorMessage =
         "Google Gemini API Key is incorrect. Please fix it in your profile settings."
     } else if (errorCode === 404) {
-      errorMessage = `Model not found or API endpoint issue. Please check the model name and API configuration. Original error: ${errorMessage}`
+      errorMessage = `Model not found or API endpoint issue. Please check that the model "${typeof chatSettings === 'object' && chatSettings.model ? chatSettings.model : 'unknown'}" exists and your API key has access to it.`
     }
 
     return new Response(JSON.stringify({ message: errorMessage }), {
