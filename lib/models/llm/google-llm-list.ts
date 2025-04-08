@@ -61,8 +61,26 @@ const GEMINI_2_0_FLASH: LLM = {
   imageInput: true
 }
 
+const GEMINI_2_5_PRO_PREVIEW: LLM = {
+  modelId: "gemini-2.5-pro-preview-03-25",
+  modelName: "Gemini 2.5 Pro Preview",
+  provider: "google",
+  hostedId: "gemini-2.5-pro-preview-03-25",
+  platformLink: GOOGLE_PLATORM_LINK,
+  imageInput: true
+}
+
+const GEMINI_2_0_FLASH_LITE: LLM = {
+  modelId: "gemini-2.0-flash-lite",
+  modelName: "Gemini 2.0 Flash Lite",
+  provider: "google",
+  hostedId: "gemini-2.0-flash-lite",
+  platformLink: GOOGLE_PLATORM_LINK,
+  imageInput: true
+}
+
 export const GOOGLE_LLM_LIST: LLM[] = [
-  GEMINI_2_5_PRO,
-  GEMINI_2_0_FLASH
+  GEMINI_2_5_PRO_PREVIEW,
+  GEMINI_2_0_FLASH_LITE
   // GEMINI_PRO_VISION
 ]

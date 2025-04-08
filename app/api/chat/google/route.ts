@@ -26,9 +26,8 @@ interface RequestBody {
 
 // Valid Gemini model IDs
 const VALID_GEMINI_MODELS: GoogleLLMID[] = [
-  // Only include the latest v2 models as requested
-  "gemini-2.0-flash-latest",
-  "gemini-2.5-pro-latest" 
+  "gemini-2.0-flash-lite",          // Use the specific lite model
+  "gemini-2.5-pro-preview-03-25"  // Use the specific preview model
 ]
 
 export async function POST(request: Request) {
