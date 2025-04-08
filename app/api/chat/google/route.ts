@@ -25,13 +25,10 @@ interface RequestBody {
 }
 
 // Valid Gemini model IDs
-const VALID_GEMINI_MODELS = [
-  "gemini-1.0-pro",
-  "gemini-pro-vision",
-  "gemini-1.5-pro-latest",
-  "gemini-1.5-flash-latest", 
-  "gemini-2.5-pro-latest",
-  "gemini-2.0-flash-latest"
+const VALID_GEMINI_MODELS: GoogleLLMID[] = [
+  // Only include the latest v2 models as requested
+  "gemini-2.0-flash-latest",
+  "gemini-2.5-pro-latest" 
 ]
 
 export async function POST(request: Request) {
@@ -159,7 +156,12 @@ export async function POST(request: Request) {
       errorMessage =
         "Google Gemini API Key is incorrect. Please fix it in your profile settings."
     } else if (errorCode === 404) {
-      errorMessage = `Model not found or API endpoint issue. Please check that the model "${typeof chatSettings === 'object' && chatSettings.model ? chatSettings.model : 'unknown'}" exists and your API key has access to it.`
+      const modelName = typeof chatSettings === 'object' && chatSettings.model ? chatSettings.model : 'unknown'
+      errorMessage = `Model not found (404): "${modelName}". Please verify:
+1. The model name is correct and exists in the list of available models.
+2. Your Google Gemini API key has access permissions for this specific model. Check your Google Cloud/AI Studio settings.
+3. The model hasn't been deprecated or renamed (e.g., 'gemini-pro' might now be 'gemini-1.0-pro').
+Original error: ${error instanceof Error ? error.message : 'Unknown error'}`
     }
 
     return new Response(JSON.stringify({ message: errorMessage }), {
