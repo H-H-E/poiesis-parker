@@ -7,13 +7,15 @@ import {
   IconMessage,
   IconPencil,
   IconRobotFace,
-  IconSparkles
+  IconSparkles,
+  IconBrain
 } from "@tabler/icons-react"
 import { FC } from "react"
 import { TabsList } from "../ui/tabs"
 import { WithTooltip } from "../ui/with-tooltip"
 import { ProfileSettings } from "../utility/profile-settings"
 import { SidebarSwitchItem } from "./sidebar-switch-item"
+import { useParams, useRouter } from "next/navigation"
 
 export const SIDEBAR_ICON_SIZE = 28
 
@@ -24,9 +26,13 @@ interface SidebarSwitcherProps {
 export const SidebarSwitcher: FC<SidebarSwitcherProps> = ({
   onContentTypeChange
 }) => {
+  const router = useRouter()
+  const params = useParams()
+  const locale = params.locale as string
+  
   return (
     <div className="flex flex-col justify-between border-r-2 pb-5">
-      <TabsList className="bg-background grid h-[440px] grid-rows-7">
+      <TabsList className="bg-background grid h-[440px] grid-rows-8">
         <SidebarSwitchItem
           icon={<IconMessage size={SIDEBAR_ICON_SIZE} />}
           contentType="chats"
@@ -73,6 +79,18 @@ export const SidebarSwitcher: FC<SidebarSwitcherProps> = ({
           icon={<IconBolt size={SIDEBAR_ICON_SIZE} />}
           contentType="tools"
           onContentTypeChange={onContentTypeChange}
+        />
+        
+        <WithTooltip
+          display={<div>Memory Dashboard</div>}
+          trigger={
+            <button 
+              className="bg-transparent flex h-12 w-12 items-center justify-center rounded-md transition-colors hover:bg-accent hover:text-accent-foreground"
+              onClick={() => router.push(`/${locale}/mem0`)}
+            >
+              <IconBrain size={SIDEBAR_ICON_SIZE} />
+            </button>
+          }
         />
       </TabsList>
 

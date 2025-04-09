@@ -7,6 +7,9 @@ import { TabsContent } from "../ui/tabs"
 import { WorkspaceSwitcher } from "../utility/workspace-switcher"
 import { WorkspaceSettings } from "../workspace/workspace-settings"
 import { SidebarContent } from "./sidebar-content"
+import { IconBrain } from "@tabler/icons-react"
+import { useParams } from "next/navigation"
+import Link from "next/link"
 
 interface SidebarProps {
   contentType: ContentType
@@ -25,6 +28,9 @@ export const Sidebar: FC<SidebarProps> = ({ contentType, showSidebar }) => {
     tools,
     models
   } = useContext(ChatbotUIContext)
+
+  const params = useParams()
+  const locale = params.locale as string
 
   const chatFolders = folders.filter(folder => folder.type === "chats")
   const presetFolders = folders.filter(folder => folder.type === "presets")
@@ -65,6 +71,17 @@ export const Sidebar: FC<SidebarProps> = ({ contentType, showSidebar }) => {
           <WorkspaceSwitcher />
 
           <WorkspaceSettings />
+        </div>
+
+        {/* Mem0 Dashboard Access Button */}
+        <div className="mt-2 border-b border-muted/40 pb-2">
+          <Link 
+            href={`/${locale}/mem0`} 
+            className="flex items-center p-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-md transition-colors duration-200"
+          >
+            <IconBrain className="mr-2 h-4 w-4" />
+            Memory Dashboard
+          </Link>
         </div>
 
         {(() => {
