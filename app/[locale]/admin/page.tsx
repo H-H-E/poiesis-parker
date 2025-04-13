@@ -46,6 +46,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger
 } from "@/components/ui/collapsible"
+import FactManagementDashboard from "@/components/memory/FactManagementDashboard"
 
 type User = {
   user_id: string
@@ -471,53 +472,26 @@ const AdminPage = () => {
   }
 
   return (
-    <div className="container mx-auto max-w-6xl p-4">
-      <div className="mb-6 flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage users, prompts, and system settings
-          </p>
-        </div>
-        <div className="relative w-full md:w-64">
-          <Search className="text-muted-foreground absolute left-2.5 top-2.5 size-4" />
-          <Input
-            type="search"
-            placeholder="Search..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
-        </div>
-      </div>
+    <div className="container mx-auto p-6">
+      <Card className="mb-10">
+        <CardHeader>
+          <CardTitle>Admin Dashboard</CardTitle>
+          <CardDescription>
+            Manage your application settings, users, prompts and memory
+          </CardDescription>
+        </CardHeader>
+      </Card>
 
-      <Tabs defaultValue="models" className="w-full">
-        <TabsList className="mb-6 grid grid-cols-2 md:grid-cols-4">
-          <TabsTrigger value="models" className="flex items-center gap-2">
-            <UserCircle className="size-4" />
-            <span>User Access</span>
-          </TabsTrigger>
-          <TabsTrigger value="prompts" className="flex items-center gap-2">
-            <FileText className="size-4" />
-            <span>Prompts</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="workspace-prompts"
-            className="flex items-center gap-2"
-          >
-            <Sparkles className="size-4" />
-            <span>Workspace Prompts</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="student-system-prompt"
-            className="flex items-center gap-2"
-          >
-            <AlertCircle className="size-4" />
-            <span>Student System</span>
-          </TabsTrigger>
+      <Tabs defaultValue="users">
+        <TabsList className="mb-4">
+          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="prompts">Prompts</TabsTrigger>
+          <TabsTrigger value="workspaces">Workspaces</TabsTrigger>
+          <TabsTrigger value="global">Global Settings</TabsTrigger>
+          <TabsTrigger value="memory">Memory Management</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="models">
+        <TabsContent value="users">
           <Card>
             <CardHeader>
               <CardTitle>User Model Access</CardTitle>
@@ -783,7 +757,7 @@ const AdminPage = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="workspace-prompts">
+        <TabsContent value="workspaces">
           <Card>
             <CardHeader>
               <CardTitle>Workspace Admin Prompts</CardTitle>
@@ -863,62 +837,49 @@ const AdminPage = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="student-system-prompt">
+        <TabsContent value="global">
           <Card>
             <CardHeader>
-              <CardTitle>Global Student System Prompt</CardTitle>
+              <CardTitle>Global Settings</CardTitle>
               <CardDescription>
-                Set a system prompt that will be applied to all student
-                interactions
+                Configure system-wide settings
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form
-                id="student-system-form"
-                onSubmit={handleSaveStudentSystemPrompt}
-                className="space-y-4"
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="student-system-prompt">
-                    Student System Prompt
-                    <span className="text-muted-foreground ml-2 text-sm">
-                      (Applied to all students)
-                    </span>
-                  </Label>
-                  <Textarea
-                    id="student-system-prompt"
-                    placeholder="Enter instructions that will be applied to all student interactions. This prompt will be included in all conversations with students."
-                    value={studentSystemPrompt}
-                    onChange={e => setStudentSystemPrompt(e.target.value)}
-                    className="min-h-[250px]"
-                  />
+              <form onSubmit={handleSaveStudentSystemPrompt}>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="studentSystemPrompt">
+                      Default Student System Prompt
+                    </Label>
+                    <Textarea
+                      id="studentSystemPrompt"
+                      className="mt-1 min-h-[200px]"
+                      placeholder="Enter default system prompt for student chats..."
+                      value={studentSystemPrompt}
+                      onChange={e => setStudentSystemPrompt(e.target.value)}
+                    />
+                  </div>
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? "Saving..." : "Save Student System Prompt"}
+                  </Button>
                 </div>
               </form>
             </CardContent>
-            <CardFooter className="flex justify-between">
-              <div className="text-muted-foreground flex items-center text-sm">
-                <InfoCard title="About Student System Prompt">
-                  <p>
-                    The student system prompt is applied globally to all student
-                    interactions across all workspaces.
-                  </p>
-                  <p className="mt-2">Use this feature to:</p>
-                  <ul className="mt-1 list-disc space-y-1 pl-5">
-                    <li>Apply consistent educational guidelines</li>
-                    <li>Add learning support instructions</li>
-                    <li>Include age-appropriate content filters</li>
-                    <li>Enable specific educational features</li>
-                  </ul>
-                </InfoCard>
-              </div>
-              <Button
-                form="student-system-form"
-                type="submit"
-                disabled={isLoading}
-              >
-                {isLoading ? "Saving..." : "Save Changes"}
-              </Button>
-            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="memory">
+          <Card>
+            <CardHeader>
+              <CardTitle>Student Memory Management</CardTitle>
+              <CardDescription>
+                Manage student facts and structured knowledge
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FactManagementDashboard />
+            </CardContent>
           </Card>
         </TabsContent>
       </Tabs>

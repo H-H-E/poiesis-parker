@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { 
   searchStudentFacts, 
   getFactsGroupedByTypeAndSubject,
@@ -9,7 +9,7 @@ import {
   type StudentFact,
   type FactType
 } from '@/lib/memory/fact-management';
-import { useUser } from '@/lib/hooks/use-user';
+import { ChatbotUIContext } from "@/context/context";
 import { supabase } from '@/lib/supabase/browser-client';
 import { 
   Card, 
@@ -62,7 +62,7 @@ const factTypeColors: Record<FactType, string> = {
 };
 
 export default function FactManagementDashboard() {
-  const { user } = useUser();
+  const { profile } = useContext(ChatbotUIContext);
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [searchParams, setSearchParams] = useState({
     query: '',
@@ -76,25 +76,31 @@ export default function FactManagementDashboard() {
   const [totalFacts, setTotalFacts] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [editingFact, setEditingFact] = useState<StudentFact | null>(null);
-  const [students, setStudents] = useState<{ id: string; name: string }[]>([]);
+  const [students, setStudents] = useState<{ id: string; username: string }[]>([]);
   
   // Load students list (for admin)
   useEffect(() => {
     async function fetchStudents() {
       try {
-        // This would fetch from your users table or a dedicated students table
-        const { data, error } = await supabase
-          .from('users')
-          .select('id, name')
-          .order('name');
-          
-        if (error) throw error;
+        // Fetch students from admin API
+        const response = await fetch('/api/admin/getusers');
+        if (!response.ok) {
+          throw new Error('Failed to fetch users');
+        }
         
-        setStudents(data || []);
+        const data = await response.json();
+        
+        // Map to expected format
+        const formattedStudents = data.users.map((user: any) => ({
+          id: user.user_id,
+          username: user.username
+        }));
+        
+        setStudents(formattedStudents);
         
         // If there are students and none is selected, select the first one
-        if (data && data.length > 0 && !selectedStudentId) {
-          setSelectedStudentId(data[0].id);
+        if (formattedStudents.length > 0 && !selectedStudentId) {
+          setSelectedStudentId(formattedStudents[0].id);
         }
       } catch (error) {
         console.error('Error fetching students:', error);
@@ -102,7 +108,7 @@ export default function FactManagementDashboard() {
     }
     
     fetchStudents();
-  }, []);
+  }, [selectedStudentId]);
   
   // Load facts when student or search params change
   useEffect(() => {
@@ -111,23 +117,42 @@ export default function FactManagementDashboard() {
     async function fetchFacts() {
       setIsLoading(true);
       try {
-        // Fetch facts based on search parameters
-        const result = await searchStudentFacts({
-          userId: selectedStudentId,
-          searchParams,
-          client: supabase,
+        // Use admin API to fetch student facts
+        const response = await fetch('/api/admin/getstudentmemory', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            userId: selectedStudentId,
+            ...searchParams
+          })
         });
         
-        setFacts(result.facts);
-        setTotalFacts(result.count);
+        if (!response.ok) {
+          throw new Error('Failed to fetch facts');
+        }
         
-        // Also fetch grouped facts for the categorized view
-        const grouped = await getFactsGroupedByTypeAndSubject({
-          userId: selectedStudentId,
-          client: supabase,
+        const result = await response.json();
+        
+        setFacts(result.facts || []);
+        setTotalFacts(result.totalCount || 0);
+        
+        // Fetch grouped facts
+        const groupedResponse = await fetch('/api/admin/getuserfacts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            userId: selectedStudentId
+          })
         });
         
-        setGroupedFacts(grouped);
+        if (groupedResponse.ok) {
+          const groupedResult = await groupedResponse.json();
+          setGroupedFacts(groupedResult.groupedFacts || {});
+        }
       } catch (error) {
         console.error('Error fetching facts:', error);
       } finally {
@@ -271,7 +296,7 @@ export default function FactManagementDashboard() {
           <SelectContent>
             {students.map(student => (
               <SelectItem key={student.id} value={student.id}>
-                {student.name}
+                {student.username}
               </SelectItem>
             ))}
           </SelectContent>
