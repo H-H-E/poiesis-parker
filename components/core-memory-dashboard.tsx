@@ -122,9 +122,9 @@ export function CoreMemoryDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-4 justify-between">
+      <div className="flex flex-col justify-between gap-4 md:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="text-muted-foreground absolute left-2.5 top-2.5 size-4" />
           <Input
             type="search"
             placeholder="Search memories..."
@@ -137,7 +137,7 @@ export function CoreMemoryDashboard() {
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="mr-2 h-4 w-4" /> Add Memory
+                <Plus className="mr-2 size-4" /> Add Memory
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -161,12 +161,12 @@ export function CoreMemoryDashboard() {
           </Dialog>
 
           <Button variant="destructive" onClick={handleResetAllMemories}>
-            <Trash2 className="mr-2 h-4 w-4" /> Reset All
+            <Trash2 className="mr-2 size-4" /> Reset All
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Memory Scope & Permissions</CardTitle>
@@ -176,7 +176,7 @@ export function CoreMemoryDashboard() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="code-snippets">Remember Code Snippets</Label>
-                <p className="text-sm text-muted-foreground">Store code patterns and preferences</p>
+                <p className="text-muted-foreground text-sm">Store code patterns and preferences</p>
               </div>
               <Switch id="code-snippets" defaultChecked />
             </div>
@@ -184,7 +184,7 @@ export function CoreMemoryDashboard() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="project-data">Project Data</Label>
-                <p className="text-sm text-muted-foreground">Remember project-specific information</p>
+                <p className="text-muted-foreground text-sm">Remember project-specific information</p>
               </div>
               <Switch id="project-data" defaultChecked />
             </div>
@@ -192,7 +192,7 @@ export function CoreMemoryDashboard() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="chat-history">Chat History</Label>
-                <p className="text-sm text-muted-foreground">Learn from our conversations</p>
+                <p className="text-muted-foreground text-sm">Learn from our conversations</p>
               </div>
               <Switch id="chat-history" defaultChecked />
             </div>
@@ -200,7 +200,7 @@ export function CoreMemoryDashboard() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="memory-scope">Memory Scope</Label>
-                <p className="text-sm text-muted-foreground">Define where memories apply</p>
+                <p className="text-muted-foreground text-sm">Define where memories apply</p>
               </div>
               <Select defaultValue="global">
                 <SelectTrigger className="w-[180px]">
@@ -223,27 +223,27 @@ export function CoreMemoryDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Total Memories</span>
                 <Badge variant="secondary">{memories.length}</Badge>
               </div>
               <Separator />
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Coding Preferences</span>
                 <Badge variant="secondary">{memories.filter((m) => m.type === "coding-preference").length}</Badge>
               </div>
               <Separator />
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">User Preferences</span>
                 <Badge variant="secondary">{memories.filter((m) => m.type === "user-preference").length}</Badge>
               </div>
               <Separator />
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Project Data</span>
                 <Badge variant="secondary">{memories.filter((m) => m.type === "project-data").length}</Badge>
               </div>
               <Separator />
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Manual Entries</span>
                 <Badge variant="secondary">{memories.filter((m) => m.type === "manual-entry").length}</Badge>
               </div>
@@ -282,7 +282,7 @@ export function CoreMemoryDashboard() {
                                 setIsEditDialogOpen(true)
                               }}
                             >
-                              <Edit className="h-4 w-4" />
+                              <Edit className="size-4" />
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
@@ -336,7 +336,7 @@ export function CoreMemoryDashboard() {
                                 setIsDeleteDialogOpen(true)
                               }}
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <Trash2 className="text-destructive size-4" />
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
@@ -362,7 +362,7 @@ export function CoreMemoryDashboard() {
                   <CardContent>
                     <p className="text-sm">{memory.content}</p>
                   </CardContent>
-                  <CardFooter className="flex justify-between pt-2 text-xs text-muted-foreground">
+                  <CardFooter className="text-muted-foreground flex justify-between pt-2 text-xs">
                     <span>Source: {memory.source}</span>
                     <span>
                       {new Date(memory.date).toLocaleDateString()} • Relevance: {memory.relevance.toFixed(2)}
@@ -371,7 +371,7 @@ export function CoreMemoryDashboard() {
                 </Card>
               ))
             ) : (
-              <div className="text-center py-10">
+              <div className="py-10 text-center">
                 <p className="text-muted-foreground">No memories found. Add some using the button above.</p>
               </div>
             )}
@@ -390,10 +390,10 @@ export function CoreMemoryDashboard() {
                         <Badge variant="outline">{memory.type}</Badge>
                         <div className="flex gap-2">
                           <Button variant="ghost" size="icon">
-                            <Edit className="h-4 w-4" />
+                            <Edit className="size-4" />
                           </Button>
                           <Button variant="ghost" size="icon">
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="text-destructive size-4" />
                           </Button>
                         </div>
                       </div>
@@ -401,7 +401,7 @@ export function CoreMemoryDashboard() {
                     <CardContent>
                       <p className="text-sm">{memory.content}</p>
                     </CardContent>
-                    <CardFooter className="flex justify-between pt-2 text-xs text-muted-foreground">
+                    <CardFooter className="text-muted-foreground flex justify-between pt-2 text-xs">
                       <span>Source: {memory.source}</span>
                       <span>
                         {new Date(memory.date).toLocaleDateString()} • Relevance: {memory.relevance.toFixed(2)}
@@ -410,7 +410,7 @@ export function CoreMemoryDashboard() {
                   </Card>
                 ))
             ) : (
-              <div className="text-center py-10">
+              <div className="py-10 text-center">
                 <p className="text-muted-foreground">No coding preferences found.</p>
               </div>
             )}
@@ -429,10 +429,10 @@ export function CoreMemoryDashboard() {
                         <Badge variant="outline">{memory.type}</Badge>
                         <div className="flex gap-2">
                           <Button variant="ghost" size="icon">
-                            <Edit className="h-4 w-4" />
+                            <Edit className="size-4" />
                           </Button>
                           <Button variant="ghost" size="icon">
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="text-destructive size-4" />
                           </Button>
                         </div>
                       </div>
@@ -440,7 +440,7 @@ export function CoreMemoryDashboard() {
                     <CardContent>
                       <p className="text-sm">{memory.content}</p>
                     </CardContent>
-                    <CardFooter className="flex justify-between pt-2 text-xs text-muted-foreground">
+                    <CardFooter className="text-muted-foreground flex justify-between pt-2 text-xs">
                       <span>Source: {memory.source}</span>
                       <span>
                         {new Date(memory.date).toLocaleDateString()} • Relevance: {memory.relevance.toFixed(2)}
@@ -449,7 +449,7 @@ export function CoreMemoryDashboard() {
                   </Card>
                 ))
             ) : (
-              <div className="text-center py-10">
+              <div className="py-10 text-center">
                 <p className="text-muted-foreground">No user preferences found.</p>
               </div>
             )}
@@ -468,10 +468,10 @@ export function CoreMemoryDashboard() {
                         <Badge variant="outline">{memory.type}</Badge>
                         <div className="flex gap-2">
                           <Button variant="ghost" size="icon">
-                            <Edit className="h-4 w-4" />
+                            <Edit className="size-4" />
                           </Button>
                           <Button variant="ghost" size="icon">
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="text-destructive size-4" />
                           </Button>
                         </div>
                       </div>
@@ -479,7 +479,7 @@ export function CoreMemoryDashboard() {
                     <CardContent>
                       <p className="text-sm">{memory.content}</p>
                     </CardContent>
-                    <CardFooter className="flex justify-between pt-2 text-xs text-muted-foreground">
+                    <CardFooter className="text-muted-foreground flex justify-between pt-2 text-xs">
                       <span>Source: {memory.source}</span>
                       <span>
                         {new Date(memory.date).toLocaleDateString()} • Relevance: {memory.relevance.toFixed(2)}
@@ -488,7 +488,7 @@ export function CoreMemoryDashboard() {
                   </Card>
                 ))
             ) : (
-              <div className="text-center py-10">
+              <div className="py-10 text-center">
                 <p className="text-muted-foreground">No project data found.</p>
               </div>
             )}

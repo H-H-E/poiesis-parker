@@ -74,12 +74,12 @@ export const Sidebar: FC<SidebarProps> = ({ contentType, showSidebar }) => {
         </div>
 
         {/* Mem0 Dashboard Access Button */}
-        <div className="mt-2 border-b border-muted/40 pb-2">
+        <div className="border-muted/40 mt-2 border-b pb-2">
           <Link 
             href={`/${locale}/mem0`} 
-            className="flex items-center p-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-md transition-colors duration-200"
+            className="text-muted-foreground hover:bg-accent hover:text-accent-foreground flex items-center rounded-md p-2 text-sm transition-colors duration-200"
           >
-            <IconBrain className="mr-2 h-4 w-4" />
+            <IconBrain className="mr-2 size-4" />
             Memory Dashboard
           </Link>
         </div>

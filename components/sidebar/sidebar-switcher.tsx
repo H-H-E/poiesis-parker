@@ -85,7 +85,7 @@ export const SidebarSwitcher: FC<SidebarSwitcherProps> = ({
           display={<div>Memory Dashboard</div>}
           trigger={
             <button 
-              className="bg-transparent flex h-12 w-12 items-center justify-center rounded-md transition-colors hover:bg-accent hover:text-accent-foreground"
+              className="hover:bg-accent hover:text-accent-foreground flex size-12 items-center justify-center rounded-md bg-transparent transition-colors"
               onClick={() => router.push(`/${locale}/mem0`)}
             >
               <IconBrain size={SIDEBAR_ICON_SIZE} />

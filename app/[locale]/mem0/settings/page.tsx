@@ -15,9 +15,9 @@ export default function MemorySettingsPage() {
   const locale = params.locale as string
   
   return (
-    <main className="container mx-auto p-4 min-h-screen">
+    <main className="container mx-auto min-h-screen p-4">
       <div className="flex flex-col space-y-6 py-6">
-        <div className="flex justify-between items-center border-b pb-4">
+        <div className="flex items-center justify-between border-b pb-4">
           <div>
             <h1 className="text-2xl font-bold">Memory Settings</h1>
             <p className="text-muted-foreground text-sm">Customize your memory preferences</p>
@@ -31,7 +31,7 @@ export default function MemorySettingsPage() {
           </Button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Privacy Controls</CardTitle>
@@ -41,7 +41,7 @@ export default function MemorySettingsPage() {
               <div className="flex items-center justify-between space-y-0">
                 <Label htmlFor="remember-facts" className="flex flex-col space-y-1">
                   <span>Remember Facts</span>
-                  <span className="font-normal text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs font-normal">
                     Store information about facts you've learned
                   </span>
                 </Label>
@@ -52,7 +52,7 @@ export default function MemorySettingsPage() {
               <div className="flex items-center justify-between space-y-0">
                 <Label htmlFor="remember-preferences" className="flex flex-col space-y-1">
                   <span>Remember Preferences</span>
-                  <span className="font-normal text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs font-normal">
                     Store information about your likes and dislikes
                   </span>
                 </Label>
@@ -63,7 +63,7 @@ export default function MemorySettingsPage() {
               <div className="flex items-center justify-between space-y-0">
                 <Label htmlFor="remember-projects" className="flex flex-col space-y-1">
                   <span>Remember Projects</span>
-                  <span className="font-normal text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs font-normal">
                     Store information about your projects and work
                   </span>
                 </Label>
@@ -81,7 +81,7 @@ export default function MemorySettingsPage() {
               <div className="space-y-2">
                 <Label htmlFor="memory-expiration">Memory Duration (days)</Label>
                 <Input id="memory-expiration" type="number" defaultValue={30} />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   How long memories should be kept before they fade (0 for never)
                 </p>
               </div>

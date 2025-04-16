@@ -276,7 +276,7 @@ export default function FactManagementDashboard() {
   // Render loading state
   if (isLoading && facts.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <div className="text-xl text-gray-500">Loading facts...</div>
       </div>
     );
@@ -284,11 +284,11 @@ export default function FactManagementDashboard() {
   
   return (
     <div className="container mx-auto py-6">
-      <h1 className="text-3xl font-bold mb-6">Student Fact Management</h1>
+      <h1 className="mb-6 text-3xl font-bold">Student Fact Management</h1>
       
       {/* Student selector for admins */}
       <div className="mb-6">
-        <label className="block text-sm font-medium mb-2">Select Student</label>
+        <label className="mb-2 block text-sm font-medium">Select Student</label>
         <Select value={selectedStudentId} onValueChange={handleStudentChange}>
           <SelectTrigger className="w-full md:w-1/3">
             <SelectValue placeholder="Select a student" />
@@ -320,9 +320,9 @@ export default function FactManagementDashboard() {
                 </CardDescription>
                 
                 {/* Search and filter controls */}
-                <div className="mt-4 flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
+                <div className="mt-4 flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
                   <div className="relative flex-1">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Search className="text-muted-foreground absolute left-2 top-2.5 size-4" />
                     <Input
                       placeholder="Search facts..."
                       className="pl-8"
@@ -334,7 +334,7 @@ export default function FactManagementDashboard() {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" className="w-full sm:w-auto">
-                        <Filter className="mr-2 h-4 w-4" />
+                        <Filter className="mr-2 size-4" />
                         Fact Types
                       </Button>
                     </DropdownMenuTrigger>
@@ -414,13 +414,13 @@ export default function FactManagementDashboard() {
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="icon">
-                                    <MoreHorizontal className="h-4 w-4" />
+                                    <MoreHorizontal className="size-4" />
                                     <span className="sr-only">Open menu</span>
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => handleEditFact(fact)}>
-                                    <Edit className="mr-2 h-4 w-4" />
+                                    <Edit className="mr-2 size-4" />
                                     Edit
                                   </DropdownMenuItem>
                                   {fact.active !== false && (
@@ -428,7 +428,7 @@ export default function FactManagementDashboard() {
                                       onClick={() => fact.id && handleDeactivateFact(fact.id)}
                                       className="text-red-600"
                                     >
-                                      <Trash className="mr-2 h-4 w-4" />
+                                      <Trash className="mr-2 size-4" />
                                       Deactivate
                                     </DropdownMenuItem>
                                   )}
@@ -443,7 +443,7 @@ export default function FactManagementDashboard() {
                 </div>
                 
                 {/* Pagination controls */}
-                <div className="flex items-center justify-between mt-4">
+                <div className="mt-4 flex items-center justify-between">
                   <div className="text-sm text-gray-500">
                     Showing {facts.length > 0 ? searchParams.offset + 1 : 0} to{' '}
                     {searchParams.offset + facts.length} of {totalFacts} facts
@@ -483,7 +483,7 @@ export default function FactManagementDashboard() {
               <CardContent>
                 <div className="grid gap-6">
                   {Object.entries(groupedFacts).length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="py-8 text-center text-gray-500">
                       No facts available for categorized view.
                     </div>
                   ) : (
@@ -514,7 +514,7 @@ export default function FactManagementDashboard() {
                                       size="icon"
                                       onClick={() => handleEditFact(fact)}
                                     >
-                                      <Edit className="h-4 w-4" />
+                                      <Edit className="size-4" />
                                     </Button>
                                   </TableCell>
                                 </TableRow>
@@ -534,13 +534,13 @@ export default function FactManagementDashboard() {
       
       {/* Edit fact modal */}
       {editingFact && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Edit Fact</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6">
+            <h2 className="mb-4 text-xl font-bold">Edit Fact</h2>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Fact Type</label>
+                <label className="mb-1 block text-sm font-medium">Fact Type</label>
                 <Select 
                   defaultValue={editingFact.fact_type}
                   onValueChange={(value) => setEditingFact({...editingFact, fact_type: value as FactType})}
@@ -560,7 +560,7 @@ export default function FactManagementDashboard() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1">Subject</label>
+                <label className="mb-1 block text-sm font-medium">Subject</label>
                 <Input 
                   value={editingFact.subject || ''} 
                   onChange={(e) => setEditingFact({...editingFact, subject: e.target.value})}
@@ -568,7 +568,7 @@ export default function FactManagementDashboard() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1">Details</label>
+                <label className="mb-1 block text-sm font-medium">Details</label>
                 <Input 
                   value={editingFact.details} 
                   onChange={(e) => setEditingFact({...editingFact, details: e.target.value})}
@@ -576,7 +576,7 @@ export default function FactManagementDashboard() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1">Confidence</label>
+                <label className="mb-1 block text-sm font-medium">Confidence</label>
                 <Input 
                   type="number"
                   min="0"

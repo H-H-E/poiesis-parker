@@ -42,12 +42,12 @@ const factTypeColors: Record<FactType, string> = {
 
 // Icon mapping for different fact types
 const factTypeIcons: Record<FactType, React.ReactNode> = {
-  preference: <ThumbsUp className="h-4 w-4" />,
-  struggle: <AlertTriangle className="h-4 w-4" />,
-  goal: <Target className="h-4 w-4" />,
-  topic_interest: <Lightbulb className="h-4 w-4" />,
-  learning_style: <Brain className="h-4 w-4" />,
-  other: <BookOpen className="h-4 w-4" />,
+  preference: <ThumbsUp className="size-4" />,
+  struggle: <AlertTriangle className="size-4" />,
+  goal: <Target className="size-4" />,
+  topic_interest: <Lightbulb className="size-4" />,
+  learning_style: <Brain className="size-4" />,
+  other: <BookOpen className="size-4" />,
 };
 
 type ProfileProps = {
@@ -143,7 +143,7 @@ export default function UserKnowledgeProfile({ userId, showControls = true }: Pr
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mb-4"></div>
+            <div className="mb-4 size-12 animate-spin rounded-full border-b-2 border-blue-700"></div>
             <p className="text-gray-500">Loading your knowledge profile...</p>
           </div>
         </CardContent>
@@ -155,8 +155,8 @@ export default function UserKnowledgeProfile({ userId, showControls = true }: Pr
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center text-red-500 py-8">
-            <AlertTriangle className="h-12 w-12 mx-auto mb-2" />
+          <div className="py-8 text-center text-red-500">
+            <AlertTriangle className="mx-auto mb-2 size-12" />
             <p>{error}</p>
             {showControls && (
               <Button onClick={loadProfileData} className="mt-4">
@@ -173,10 +173,10 @@ export default function UserKnowledgeProfile({ userId, showControls = true }: Pr
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center text-gray-500 py-8">
-            <BookOpen className="h-12 w-12 mx-auto mb-2" />
+          <div className="py-8 text-center text-gray-500">
+            <BookOpen className="mx-auto mb-2 size-12" />
             <p>No learning profile has been created yet.</p>
-            <p className="text-sm mt-2">As you interact with the system, we'll build a personalized profile to enhance your learning experience.</p>
+            <p className="mt-2 text-sm">As you interact with the system, we'll build a personalized profile to enhance your learning experience.</p>
           </div>
         </CardContent>
       </Card>
@@ -186,7 +186,7 @@ export default function UserKnowledgeProfile({ userId, showControls = true }: Pr
   return (
     <Card className="w-full">
       <CardHeader>
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
           <div>
             <CardTitle>Knowledge Profile</CardTitle>
             <CardDescription>
@@ -224,7 +224,7 @@ export default function UserKnowledgeProfile({ userId, showControls = true }: Pr
             
             {profile.recentSubjects.length > 0 && (
               <div className="mt-4">
-                <h3 className="text-sm font-medium text-gray-500 mb-2">
+                <h3 className="mb-2 text-sm font-medium text-gray-500">
                   Recent Areas of Focus
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -242,7 +242,7 @@ export default function UserKnowledgeProfile({ userId, showControls = true }: Pr
         {/* Insights Tab */}
         <TabsContent value="insights" className="px-6 py-4">
           {!insights ? (
-            <div className="text-center text-gray-500 py-4">
+            <div className="py-4 text-center text-gray-500">
               No insights available yet.
             </div>
           ) : (
@@ -250,11 +250,11 @@ export default function UserKnowledgeProfile({ userId, showControls = true }: Pr
               {/* Strengths */}
               {insights.strengths.length > 0 && (
                 <div>
-                  <h3 className="text-md font-medium flex items-center gap-2 mb-2">
-                    <Sparkles className="h-4 w-4 text-yellow-500" />
+                  <h3 className="text-md mb-2 flex items-center gap-2 font-medium">
+                    <Sparkles className="size-4 text-yellow-500" />
                     Strengths
                   </h3>
-                  <ul className="list-disc pl-5 space-y-1">
+                  <ul className="list-disc space-y-1 pl-5">
                     {insights.strengths.map((strength, i) => (
                       <li key={i} className="text-gray-700">{strength}</li>
                     ))}
@@ -265,11 +265,11 @@ export default function UserKnowledgeProfile({ userId, showControls = true }: Pr
               {/* Challenges */}
               {insights.challenges.length > 0 && (
                 <div>
-                  <h3 className="text-md font-medium flex items-center gap-2 mb-2">
-                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                  <h3 className="text-md mb-2 flex items-center gap-2 font-medium">
+                    <AlertTriangle className="size-4 text-red-500" />
                     Challenges
                   </h3>
-                  <ul className="list-disc pl-5 space-y-1">
+                  <ul className="list-disc space-y-1 pl-5">
                     {insights.challenges.map((challenge, i) => (
                       <li key={i} className="text-gray-700">{challenge}</li>
                     ))}
@@ -280,11 +280,11 @@ export default function UserKnowledgeProfile({ userId, showControls = true }: Pr
               {/* Learning Patterns */}
               {insights.learningPatterns.length > 0 && (
                 <div>
-                  <h3 className="text-md font-medium flex items-center gap-2 mb-2">
-                    <Brain className="h-4 w-4 text-purple-500" />
+                  <h3 className="text-md mb-2 flex items-center gap-2 font-medium">
+                    <Brain className="size-4 text-purple-500" />
                     Learning Patterns
                   </h3>
-                  <ul className="list-disc pl-5 space-y-1">
+                  <ul className="list-disc space-y-1 pl-5">
                     {insights.learningPatterns.map((pattern, i) => (
                       <li key={i} className="text-gray-700">{pattern}</li>
                     ))}
@@ -295,11 +295,11 @@ export default function UserKnowledgeProfile({ userId, showControls = true }: Pr
               {/* Recommended Approaches */}
               {insights.recommendedApproaches.length > 0 && (
                 <div>
-                  <h3 className="text-md font-medium flex items-center gap-2 mb-2">
-                    <Lightbulb className="h-4 w-4 text-yellow-600" />
+                  <h3 className="text-md mb-2 flex items-center gap-2 font-medium">
+                    <Lightbulb className="size-4 text-yellow-600" />
                     Recommended Learning Approaches
                   </h3>
-                  <ul className="list-disc pl-5 space-y-1">
+                  <ul className="list-disc space-y-1 pl-5">
                     {insights.recommendedApproaches.map((approach, i) => (
                       <li key={i} className="text-gray-700">{approach}</li>
                     ))}
@@ -315,17 +315,17 @@ export default function UserKnowledgeProfile({ userId, showControls = true }: Pr
           <div className="space-y-6">
             {/* Fact Type Distribution */}
             <div>
-              <h3 className="text-md font-medium mb-3">Fact Type Distribution</h3>
+              <h3 className="text-md mb-3 font-medium">Fact Type Distribution</h3>
               
               {factDistribution.length === 0 ? (
-                <div className="text-center text-gray-500 py-4">
+                <div className="py-4 text-center text-gray-500">
                   No distribution data available.
                 </div>
               ) : (
                 <div className="space-y-3">
                   {factDistribution.map(({ type, count, percentage }) => (
                     <div key={type} className="space-y-1">
-                      <div className="flex justify-between items-center">
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="inline-flex">
                             {factTypeIcons[type as FactType]}
@@ -338,7 +338,7 @@ export default function UserKnowledgeProfile({ userId, showControls = true }: Pr
                           {count} ({percentage}%)
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div className="h-2.5 w-full rounded-full bg-gray-200">
                         <div 
                           className={`h-2.5 rounded-full ${factTypeColors[type as FactType].split(' ')[0]}`} 
                           style={{ width: `${percentage}%` }}
@@ -352,10 +352,10 @@ export default function UserKnowledgeProfile({ userId, showControls = true }: Pr
             
             {/* Visual Distribution (simplified circular representation) */}
             <div className="pt-4">
-              <h3 className="text-md font-medium mb-4">Visual Distribution</h3>
+              <h3 className="text-md mb-4 font-medium">Visual Distribution</h3>
               
               <div className="flex justify-center">
-                <div className="relative w-48 h-48">
+                <div className="relative size-48">
                   {factDistribution.length > 0 ? (
                     <>
                       <div className="absolute inset-0 flex items-center justify-center">
