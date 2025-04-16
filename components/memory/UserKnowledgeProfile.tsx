@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useUser } from "@/lib/hooks/use-user"
+import { useState, useEffect, useContext } from "react"
+import { ChatbotUIContext } from "@/context/context"
 import { supabase } from "@/lib/supabase/browser-client"
 import {
   generateUserKnowledgeProfile,
@@ -59,7 +59,9 @@ export default function UserKnowledgeProfile({
   userId,
   showControls = true
 }: ProfileProps) {
-  const { user } = useUser()
+  // Get profile from context instead of useUser
+  const { profile: contextProfile } = useContext(ChatbotUIContext)
+
   const [profile, setProfile] = useState<{
     summary: string
     factTypeDistribution: Record<FactType, number>
@@ -76,8 +78,8 @@ export default function UserKnowledgeProfile({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Determine which user ID to use
-  const targetUserId = userId || user?.id
+  // Determine which user ID to use: prop userId OR context profile id
+  const targetUserId = userId || contextProfile?.id
 
   // Function to load profile data (no longer wrapped in useCallback)
   async function loadProfileData() {
@@ -107,12 +109,12 @@ export default function UserKnowledgeProfile({
     }
   }
 
-  // Load profile data on mount or when userId changes
+  // Load profile data on mount or when targetUserId changes
   useEffect(() => {
     if (!targetUserId) return
     loadProfileData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetUserId]) // Added loadProfileData to dependency array
+  }, [targetUserId]) // Dependency array uses targetUserId
 
   // Calculate distribution percentages for the pie chart visualization
   const calculateDistribution = () => {
