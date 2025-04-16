@@ -13,6 +13,21 @@ import {
 import { FC, useCallback, useState } from "react"
 import { LimitDisplay } from "../ui/limit-display"
 
+// Moved debounce function outside the component
+const debounce = (func: (...args: any[]) => void, wait: number) => {
+  let timeout: NodeJS.Timeout | null = null
+
+  return (...args: any[]) => {
+    const later = () => {
+      if (timeout) clearTimeout(timeout)
+      func(...args)
+    }
+
+    if (timeout) clearTimeout(timeout)
+    timeout = setTimeout(later, wait)
+  }
+}
+
 interface ProfileStepProps {
   username: string
   usernameAvailable: boolean
@@ -31,20 +46,6 @@ export const ProfileStep: FC<ProfileStepProps> = ({
   onDisplayNameChange
 }) => {
   const [loading, setLoading] = useState(false)
-
-  const debounce = (func: (...args: any[]) => void, wait: number) => {
-    let timeout: NodeJS.Timeout | null
-
-    return (...args: any[]) => {
-      const later = () => {
-        if (timeout) clearTimeout(timeout)
-        func(...args)
-      }
-
-      if (timeout) clearTimeout(timeout)
-      timeout = setTimeout(later, wait)
-    }
-  }
 
   const checkUsernameAvailability = useCallback(
     debounce(async (username: string) => {
@@ -83,7 +84,7 @@ export const ProfileStep: FC<ProfileStepProps> = ({
 
       setLoading(false)
     }, 500),
-    []
+    [onUsernameAvailableChange]
   )
 
   return (

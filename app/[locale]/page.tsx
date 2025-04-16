@@ -7,7 +7,7 @@ import Link from "next/link"
 
 export default function HomePage() {
   const { theme } = useTheme()
-  
+
   return (
     <div className="flex size-full flex-col items-center justify-center">
       <div>

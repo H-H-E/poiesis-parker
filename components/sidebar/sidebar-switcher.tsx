@@ -29,7 +29,7 @@ export const SidebarSwitcher: FC<SidebarSwitcherProps> = ({
   const router = useRouter()
   const params = useParams()
   const locale = params.locale as string
-  
+
   return (
     <div className="flex flex-col justify-between border-r-2 pb-5">
       <TabsList className="bg-background grid h-[440px] grid-rows-8">
@@ -80,11 +80,11 @@ export const SidebarSwitcher: FC<SidebarSwitcherProps> = ({
           contentType="tools"
           onContentTypeChange={onContentTypeChange}
         />
-        
+
         <WithTooltip
           display={<div>Memory Dashboard</div>}
           trigger={
-            <button 
+            <button
               className="hover:bg-accent hover:text-accent-foreground flex size-12 items-center justify-center rounded-md bg-transparent transition-colors"
               onClick={() => router.push(`/${locale}/mem0`)}
             >

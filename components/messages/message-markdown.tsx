@@ -1,4 +1,5 @@
 import React, { FC } from "react"
+import Image from "next/image"
 import remarkGfm from "remark-gfm"
 import remarkMath from "remark-math"
 import { MessageCodeBlock } from "./message-codeblock"
@@ -17,8 +18,35 @@ export const MessageMarkdown: FC<MessageMarkdownProps> = ({ content }) => {
         p({ children }) {
           return <p className="mb-2 last:mb-0">{children}</p>
         },
-        img({ node, ...props }) {
-          return <img className="max-w-[67%]" {...props} />
+        img({
+          node,
+          src,
+          alt,
+          width: mdWidth,
+          height: mdHeight,
+          ref,
+          ...props
+        }) {
+          const imageAlt = alt || "image"
+          const imageWidth =
+            typeof mdWidth === "string" ? parseInt(mdWidth, 10) : mdWidth
+          const imageHeight =
+            typeof mdHeight === "string" ? parseInt(mdHeight, 10) : mdHeight
+
+          const finalWidth = !imageWidth || isNaN(imageWidth) ? 500 : imageWidth
+          const finalHeight =
+            !imageHeight || isNaN(imageHeight) ? 300 : imageHeight
+
+          return (
+            <Image
+              className="max-w-[67%]"
+              src={src || ""}
+              alt={imageAlt}
+              width={finalWidth}
+              height={finalHeight}
+              {...props}
+            />
+          )
         },
         code({ node, className, children, ...props }) {
           const childArray = React.Children.toArray(children)

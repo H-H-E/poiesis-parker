@@ -124,7 +124,8 @@ export const Message: FC<MessageProps> = ({
       input.focus()
       input.setSelectionRange(input.value.length, input.value.length)
     }
-  }, [isEditing])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditing, message.content])
 
   const MODEL_DATA = [
     ...models.map(model => ({

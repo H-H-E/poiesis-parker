@@ -1,30 +1,39 @@
-import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
-import { RunnableSequence, RunnablePassthrough } from "@langchain/core/runnables";
-import { StringOutputParser } from "@langchain/core/output_parsers";
-import { OpenAIEmbeddings, ChatOpenAI } from "@langchain/openai";
-import { formatDocumentsAsString } from "langchain/util/document";
-import type { BaseMessage } from "@langchain/core/messages";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  ChatPromptTemplate,
+  MessagesPlaceholder
+} from "@langchain/core/prompts"
+import {
+  RunnableSequence,
+  RunnablePassthrough
+} from "@langchain/core/runnables"
+import { StringOutputParser } from "@langchain/core/output_parsers"
+import { OpenAIEmbeddings, ChatOpenAI } from "@langchain/openai"
+import { formatDocumentsAsString } from "langchain/util/document"
+import type { BaseMessage } from "@langchain/core/messages"
+import type { SupabaseClient } from "@supabase/supabase-js"
 
 // Import our memory components
-import { SupabaseChatMessageHistory } from "@/lib/langchain/memory/supabase-chat-history";
-import { getConversationMemoryRetriever } from "@/lib/memory/vector-memory";
-import { getFactsForPrompt, processAndStoreConversationFacts } from "@/lib/memory/fact-management";
-import { supabase as browserClient } from "@/lib/supabase/browser-client";
+import { SupabaseChatMessageHistory } from "@/lib/langchain/memory/supabase-chat-history"
+import { getConversationMemoryRetriever } from "@/lib/memory/vector-memory"
+import {
+  getFactsForPrompt,
+  processAndStoreConversationFacts
+} from "@/lib/memory/fact-management"
+import { supabase as browserClient } from "@/lib/supabase/browser-client"
 
 // Import SEL components
-import { 
+import {
   extractComprehensiveInsightsFromMessages,
   formatAllSELInsightsForPrompt
-} from "@/lib/memory/sel-extraction";
+} from "@/lib/memory/sel-extraction"
 
 // Define a type for chat settings
 export interface ChatSettings {
-  openaiApiKey?: string;
-  model: string;
-  temperature: number;
-  extractFacts?: boolean;
-  includeSEL?: boolean; // New setting for social-emotional learning
+  openaiApiKey?: string
+  model: string
+  temperature: number
+  extractFacts?: boolean
+  includeSEL?: boolean // New setting for social-emotional learning
   // Add any other settings needed
 }
 
@@ -47,47 +56,50 @@ export async function createMemoryAugmentedChain({
   subjectFilter = null, // Optional subject filter for facts
   timeframeFilter = "all" // Optional timeframe filter
 }: {
-  userId: string;
-  chatId: string;
-  supabaseClient?: SupabaseClient;
-  chatSettings: ChatSettings; // Use the defined type
-  sourceCount?: number;
-  includeStructuredFacts?: boolean;
-  includeSEL?: boolean;
-  systemPromptTemplate?: string;
-  subjectFilter?: string | null;
-  timeframeFilter?: string;
+  userId: string
+  chatId: string
+  supabaseClient?: SupabaseClient
+  chatSettings: ChatSettings // Use the defined type
+  sourceCount?: number
+  includeStructuredFacts?: boolean
+  includeSEL?: boolean
+  systemPromptTemplate?: string
+  subjectFilter?: string | null
+  timeframeFilter?: string
 }) {
   // 1. Setup Memory Components
-  const chatHistory = new SupabaseChatMessageHistory({ 
-    chatId, 
-    userId, 
-    client: supabaseClient 
-  });
-  
+  const chatHistory = new SupabaseChatMessageHistory({
+    chatId,
+    userId,
+    client: supabaseClient
+  })
+
   const retriever = getConversationMemoryRetriever({
     userId,
     client: supabaseClient,
     embeddingApiKey: chatSettings.openaiApiKey, // Or from env vars if server-side
     k: sourceCount,
     timeframeFilter
-  });
+  })
 
   // 2. Define LLM
   const llm = new ChatOpenAI({
     openAIApiKey: chatSettings.openaiApiKey, // Or from env vars
     modelName: chatSettings.model,
-    temperature: chatSettings.temperature,
+    temperature: chatSettings.temperature
     // streaming: true // Keep streaming enabled for UI
-  });
+  })
 
   // 3. Define Prompts - a) Condense Question Prompt
   const condenseQuestionPrompt = ChatPromptTemplate.fromMessages([
-    ["system", "Given the conversation history, formulate the user's most recent message as a standalone question that captures its full intent. If it's already a standalone question, return it as is."],
+    [
+      "system",
+      "Given the conversation history, formulate the user's most recent message as a standalone question that captures its full intent. If it's already a standalone question, return it as is."
+    ],
     new MessagesPlaceholder("chat_history"),
     ["human", "{question}"],
     ["ai", "Standalone question:"]
-  ]);
+  ])
 
   // 3. Define Prompts - b) Answer Prompt with all memory sources including SEL
   const defaultSystemPrompt = `You are Poiesis Pete, a helpful AI assistant for students. Answer the user's question based on the provided context sources:
@@ -99,36 +111,36 @@ export async function createMemoryAugmentedChain({
 
 If asked about something not in these sources, acknowledge that you don't have specific memory of that topic and answer based on your general knowledge. Be friendly, supportive, and personalize your responses to the student's preferences and needs when possible.
 
-Adapt your communication style to match their preferences - be aware of what they find engaging or "cringe", and how they prefer to discuss topics.`;
+Adapt your communication style to match their preferences - be aware of what they find engaging or "cringe", and how they prefer to discuss topics.`
 
-  const finalSystemPrompt = systemPromptTemplate || defaultSystemPrompt;
+  const finalSystemPrompt = systemPromptTemplate || defaultSystemPrompt
 
   const answerPrompt = ChatPromptTemplate.fromMessages([
     ["system", finalSystemPrompt],
     // We'll add these conditionally below
-    // ["system", "{student_facts}"], 
+    // ["system", "{student_facts}"],
     // ["system", "{sel_insights}"],
     // ["system", "Relevant conversation memories:\n{context}"],
     new MessagesPlaceholder("chat_history"),
-    ["human", "{question}"],
-  ]);
+    ["human", "{question}"]
+  ])
 
   // 4. Define Chains
   const standaloneQuestionChain = RunnableSequence.from([
     // Dynamically fetch history inside the chain step
     RunnablePassthrough.assign({
-      chat_history: async () => chatHistory.getMessages(),
+      chat_history: async () => chatHistory.getMessages()
     }),
     condenseQuestionPrompt,
     llm,
-    new StringOutputParser(),
-  ]).withConfig({ runName: "StandaloneQuestionGeneration" });
+    new StringOutputParser()
+  ]).withConfig({ runName: "StandaloneQuestionGeneration" })
 
   const retrieverChain = RunnableSequence.from([
     (input: { standalone_question: string }) => input.standalone_question,
     retriever,
-    formatDocumentsAsString,
-  ]).withConfig({ runName: "RetrieveSemanticMemory" });
+    formatDocumentsAsString
+  ]).withConfig({ runName: "RetrieveSemanticMemory" })
 
   // 5. Main RAG Chain with memory augmentation
   const memoryAugmentedChain = RunnableSequence.from([
@@ -136,112 +148,122 @@ Adapt your communication style to match their preferences - be aware of what the
     RunnablePassthrough.assign({
       // Condense question only if chat history exists
       standalone_question: async (input: { question: string }) => {
-        const messages = await chatHistory.getMessages();
+        const messages = await chatHistory.getMessages()
         if (messages && messages.length > 1) {
           return standaloneQuestionChain.invoke({
-            question: input.question,
+            question: input.question
             // chat_history populated inside the chain
-          });
+          })
         }
-        return input.question; // Pass through if no history
+        return input.question // Pass through if no history
       },
       // Fetch structured facts about the student
-      student_facts: includeStructuredFacts 
-        ? async () => getFactsForPrompt({ 
-            userId, 
-            subject: subjectFilter, 
-            timeframe: timeframeFilter,
-            client: supabaseClient 
-          })
+      student_facts: includeStructuredFacts
+        ? async () =>
+            getFactsForPrompt({
+              userId,
+              subject: subjectFilter,
+              timeframe: timeframeFilter,
+              client: supabaseClient
+            })
         : async () => "", // Empty string if not using structured facts
-      
+
       // Fetch social-emotional learning and style preferences
-      sel_insights: includeSEL 
+      sel_insights: includeSEL
         ? async () => {
             // Get messages to analyze
-            const messages = await chatHistory.getMessages();
+            const messages = await chatHistory.getMessages()
             if (!messages || messages.length < 3) {
-              return ""; // Not enough context to extract insights
+              return "" // Not enough context to extract insights
             }
-            
+
             // Extract comprehensive insights from messages
             const insights = await extractComprehensiveInsightsFromMessages({
               messages,
-              llmApiKey: chatSettings.openaiApiKey,
-            });
-            
+              llmApiKey: chatSettings.openaiApiKey
+            })
+
             // Format insights for prompt inclusion
-            return formatAllSELInsightsForPrompt(insights);
+            return formatAllSELInsightsForPrompt(insights)
           }
-        : async () => "", // Empty string if not using SEL
+        : async () => "" // Empty string if not using SEL
     }),
-    
+
     // Step 2: Retrieve semantic memory context based on the standalone question
     RunnablePassthrough.assign({
-      context: async (input) => {
-        const context = await retrieverChain.invoke({ 
+      context: async input => {
+        const context = await retrieverChain.invoke({
           standalone_question: input.standalone_question
-        });
-        return context || "No relevant past conversation memories found.";
+        })
+        return context || "No relevant past conversation memories found."
       },
       // Also get fresh chat history for the final prompt
-      chat_history: async () => chatHistory.getMessages(),
+      chat_history: async () => chatHistory.getMessages()
     }),
-    
+
     // Step 3: Format the final prompt with all memory sources
-    (input) => {
+    input => {
       // Start with the basic inputs
-      const finalPromptInputs: Record<string, unknown> = { // Use unknown instead of any
+      const finalPromptInputs: Record<string, unknown> = {
+        // Use unknown instead of any
         question: input.question,
-        chat_history: input.chat_history ?? [],
-      };
-      
+        chat_history: input.chat_history ?? []
+      }
+
       // Build the final prompt by conditionally adding memory components
-      let finalPrompt = answerPrompt;
-      const promptParts = [
-        ["system", finalSystemPrompt]
-      ];
-      
+      let finalPrompt = answerPrompt
+      const promptParts = [["system", finalSystemPrompt]]
+
       // Add student facts if available and requested
-      if (includeStructuredFacts && input.student_facts && input.student_facts.length > 0) {
-        promptParts.push(["system", `STUDENT FACTS:\n${input.student_facts}\n\n`]);
+      if (
+        includeStructuredFacts &&
+        input.student_facts &&
+        input.student_facts.length > 0
+      ) {
+        promptParts.push([
+          "system",
+          `STUDENT FACTS:\n${input.student_facts}\n\n`
+        ])
       }
 
       // Add SEL insights if available and requested
       if (includeSEL && input.sel_insights && input.sel_insights.length > 0) {
-        promptParts.push(["system", `${input.sel_insights}\n\n`]);
+        promptParts.push(["system", `${input.sel_insights}\n\n`])
       }
-      
+
       // Add RAG context if available
       if (input.context && input.context.length > 0) {
-        promptParts.push(["system", `CONVERSATION MEMORIES:\n${input.context}\n\n`]);
+        promptParts.push([
+          "system",
+          `CONVERSATION MEMORIES:\n${input.context}\n\n`
+        ])
       }
-      
-      // Add chat history
-      promptParts.push(new MessagesPlaceholder("chat_history"));
-      
-      // Add user question
-      promptParts.push(["human", "{question}"]);
-      
-      // Create the final prompt template
-      finalPrompt = ChatPromptTemplate.fromMessages(promptParts);
-      
-      return { 
-        prompt: finalPrompt,
-        prompt_inputs: finalPromptInputs 
-      };
-    },
-    
-    // Step 4: Execute the final prompt with LLM
-    (input) => input.prompt.pipe(llm).invoke(input.prompt_inputs),
-    
-    // Output parser might be handled by streaming logic in the API route
-  ]).withConfig({ runName: "MemoryAugmentedAnswerGeneration" });
 
-  return { 
-    memoryAugmentedChain, 
+      // Add chat history
+      promptParts.push(new MessagesPlaceholder("chat_history"))
+
+      // Add user question
+      promptParts.push(["human", "{question}"])
+
+      // Create the final prompt template
+      finalPrompt = ChatPromptTemplate.fromMessages(promptParts)
+
+      return {
+        prompt: finalPrompt,
+        prompt_inputs: finalPromptInputs
+      }
+    },
+
+    // Step 4: Execute the final prompt with LLM
+    input => input.prompt.pipe(llm).invoke(input.prompt_inputs)
+
+    // Output parser might be handled by streaming logic in the API route
+  ]).withConfig({ runName: "MemoryAugmentedAnswerGeneration" })
+
+  return {
+    memoryAugmentedChain,
     chatHistory // Return history object for saving messages in the API route
-  };
+  }
 }
 
 /**
@@ -313,4 +335,4 @@ export async function POST(req: Request) {
     );
   }
 }
-*/ 
+*/

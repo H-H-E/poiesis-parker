@@ -2,38 +2,49 @@ import { supabase } from "@/lib/supabase/browser-client"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 // Define the fact_type enum values that match the table CHECK constraint
-export type FactType = 'preference' | 'struggle' | 'goal' | 'topic_interest' | 'learning_style' | 'other';
+export type FactType =
+  | "preference"
+  | "struggle"
+  | "goal"
+  | "topic_interest"
+  | "learning_style"
+  | "other"
 
 // Define the student fact structure manually to avoid needing generated types
 export interface StudentFact {
-  id: string;
-  user_id: string;
-  chat_id?: string | null;
-  fact_type: FactType;
-  subject?: string | null;
-  details: string;
-  confidence?: number | null;
-  source_message_id?: string | null;
-  active: boolean;
-  created_at: string;
-  updated_at: string;
+  id: string
+  user_id: string
+  chat_id?: string | null
+  fact_type: FactType
+  subject?: string | null
+  details: string
+  confidence?: number | null
+  source_message_id?: string | null
+  active: boolean
+  created_at: string
+  updated_at: string
 }
 
 // Define what's required for insertion (partial type for insert operations)
-export type StudentFactInsert = Omit<StudentFact, 'id' | 'created_at' | 'updated_at'> & {
-  id?: string; // Optional on insert
-  created_at?: string;
-  updated_at?: string;
-};
+export type StudentFactInsert = Omit<
+  StudentFact,
+  "id" | "created_at" | "updated_at"
+> & {
+  id?: string // Optional on insert
+  created_at?: string
+  updated_at?: string
+}
 
 // Define what's allowed for updates
-export type StudentFactUpdate = Partial<Omit<StudentFact, 'id' | 'user_id' | 'created_at'>>
+export type StudentFactUpdate = Partial<
+  Omit<StudentFact, "id" | "user_id" | "created_at">
+>
 
 /**
  * Get a specific student fact by its ID
  */
 export const getFactById = async (
-  factId: string, 
+  factId: string,
   client = supabase
 ): Promise<StudentFact> => {
   const { data: fact, error } = await client
@@ -57,7 +68,7 @@ export const getFactById = async (
  * Get all active facts for a student/user
  */
 export const getFactsByUserId = async (
-  userId: string, 
+  userId: string,
   client = supabase
 ): Promise<StudentFact[]> => {
   const { data: facts, error } = await client
@@ -78,8 +89,8 @@ export const getFactsByUserId = async (
  * Get facts of a specific type for a student/user
  */
 export const getFactsByType = async (
-  userId: string, 
-  factType: FactType, 
+  userId: string,
+  factType: FactType,
   client = supabase
 ): Promise<StudentFact[]> => {
   const { data: facts, error } = await client
@@ -240,10 +251,7 @@ export const deleteFact = async (
   factId: string,
   client = supabase
 ): Promise<boolean> => {
-  const { error } = await client
-    .from("student_facts")
-    .delete()
-    .eq("id", factId)
+  const { error } = await client.from("student_facts").delete().eq("id", factId)
 
   if (error) {
     throw new Error(`Failed to delete fact: ${error.message}`)
@@ -260,24 +268,27 @@ export const getGroupedFacts = async (
   client = supabase
 ): Promise<Record<string, StudentFact[]>> => {
   const facts = await getFactsByUserId(userId, client)
-  
-  return facts.reduce((grouped, fact) => {
-    // First group by fact_type
-    const type = fact.fact_type
-    if (!grouped[type]) {
-      grouped[type] = []
-    }
-    grouped[type].push(fact)
-    
-    // Then if subject exists, group by fact_type:subject
-    if (fact.subject) {
-      const key = `${type}:${fact.subject}`
-      if (!grouped[key]) {
-        grouped[key] = []
+
+  return facts.reduce(
+    (grouped, fact) => {
+      // First group by fact_type
+      const type = fact.fact_type
+      if (!grouped[type]) {
+        grouped[type] = []
       }
-      grouped[key].push(fact)
-    }
-    
-    return grouped
-  }, {} as Record<string, StudentFact[]>)
-} 
+      grouped[type].push(fact)
+
+      // Then if subject exists, group by fact_type:subject
+      if (fact.subject) {
+        const key = `${type}:${fact.subject}`
+        if (!grouped[key]) {
+          grouped[key] = []
+        }
+        grouped[key].push(fact)
+      }
+
+      return grouped
+    },
+    {} as Record<string, StudentFact[]>
+  )
+}

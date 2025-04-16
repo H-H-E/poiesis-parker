@@ -841,9 +841,7 @@ const AdminPage = () => {
           <Card>
             <CardHeader>
               <CardTitle>Global Settings</CardTitle>
-              <CardDescription>
-                Configure system-wide settings
-              </CardDescription>
+              <CardDescription>Configure system-wide settings</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSaveStudentSystemPrompt}>
