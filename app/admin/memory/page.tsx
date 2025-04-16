@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { Toaster } from 'react-hot-toast';
 import { StudentSelector } from '@/app/components/admin/memory/StudentSelector';
 import { AdminMemoryFilters } from '@/app/components/admin/memory/AdminMemoryFilters';
 import { AdminFactList } from '@/app/components/admin/memory/AdminFactList';
 import { FactEditModal } from '@/app/components/admin/memory/FactEditModal';
+import { handleApiError } from '@/app/lib/memory/admin-utils';
 import type { Fact, SearchParams } from '@/app/components/student/memory/types'; // Reusing student types for now
 
 // Placeholder type for Admin filters, refine as needed
@@ -88,7 +90,8 @@ export default function AdminMemoryPage() {
       }
       
     } catch (err) {
-      setFactsError(err instanceof Error ? err : new Error('An unknown error occurred'));
+      const errorMessage = handleApiError(err, 'Failed to fetch student facts');
+      setFactsError(new Error(errorMessage));
       setFacts([]);
       setTotalCount(0);
       setHasMore(false);
@@ -167,7 +170,7 @@ export default function AdminMemoryPage() {
       setSelectedFact(null);
       
     } catch (error) {
-      console.error('Error saving fact:', error);
+      handleApiError(error, 'Failed to save fact');
       throw error; // Let the modal component handle the error
     }
   };
@@ -191,8 +194,7 @@ export default function AdminMemoryPage() {
         await fetchFactsForUser();
         
       } catch (error) {
-        console.error('Error deleting fact:', error);
-        alert('Failed to delete fact. Please try again.');
+        handleApiError(error, 'Failed to delete fact');
       }
     }
   };
@@ -273,6 +275,9 @@ export default function AdminMemoryPage() {
         fact={selectedFact}
         availableFactTypes={availableFactTypes}
       />
+
+      {/* Toast notifications */}
+      <Toaster position="top-right" />
     </main>
   );
 } 
