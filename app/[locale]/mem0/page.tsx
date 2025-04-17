@@ -7,7 +7,7 @@ import { useRouter, useParams } from "next/navigation"
 export default function Mem0DashboardPage() {
   const router = useRouter()
   const params = useParams()
-  const locale = params.locale as string
+  const locale = params?.locale as string
 
   return (
     <main className="container mx-auto min-h-screen p-4">

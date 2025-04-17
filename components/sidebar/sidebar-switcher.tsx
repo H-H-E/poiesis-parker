@@ -28,7 +28,7 @@ export const SidebarSwitcher: FC<SidebarSwitcherProps> = ({
 }) => {
   const router = useRouter()
   const params = useParams()
-  const locale = params.locale as string
+  const locale = params?.locale as string
 
   return (
     <div className="flex flex-col justify-between border-r-2 pb-5">

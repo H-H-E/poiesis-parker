@@ -79,7 +79,7 @@ export async function createMemoryAugmentedChain({
     client: supabaseClient,
     embeddingApiKey: chatSettings.openaiApiKey, // Or from env vars if server-side
     k: sourceCount,
-    timeframeFilter
+    timeframe: timeframeFilter
   })
 
   // 2. Define LLM
@@ -239,14 +239,16 @@ Adapt your communication style to match their preferences - be aware of what the
         ])
       }
 
-      // Add chat history
-      promptParts.push(new MessagesPlaceholder("chat_history"))
+      // Add chat history - using a special type cast to handle the MessagesPlaceholder
+      const historyPlaceholder = new MessagesPlaceholder("chat_history")
+      promptParts.push(historyPlaceholder as any)
 
       // Add user question
       promptParts.push(["human", "{question}"])
 
       // Create the final prompt template
-      finalPrompt = ChatPromptTemplate.fromMessages(promptParts)
+      // Use a type assertion to handle the mixed array of string tuples and MessagesPlaceholder
+      finalPrompt = ChatPromptTemplate.fromMessages(promptParts as any)
 
       return {
         prompt: finalPrompt,

@@ -12,7 +12,7 @@ export type FactType =
 
 // Define the student fact structure manually to avoid needing generated types
 export interface StudentFact {
-  id: string
+  id: number
   user_id: string
   chat_id?: string | null
   fact_type: FactType
@@ -30,7 +30,7 @@ export type StudentFactInsert = Omit<
   StudentFact,
   "id" | "created_at" | "updated_at"
 > & {
-  id?: string // Optional on insert
+  id?: number // Optional on insert
   created_at?: string
   updated_at?: string
 }
@@ -44,7 +44,7 @@ export type StudentFactUpdate = Partial<
  * Get a specific student fact by its ID
  */
 export const getFactById = async (
-  factId: string,
+  factId: number,
   client = supabase
 ): Promise<StudentFact> => {
   const { data: fact, error } = await client
@@ -203,7 +203,7 @@ export const createFacts = async (
  * Update an existing student fact
  */
 export const updateFact = async (
-  factId: string,
+  factId: number,
   updates: StudentFactUpdate,
   client = supabase
 ): Promise<StudentFact> => {
@@ -229,7 +229,7 @@ export const updateFact = async (
  * Deactivate (soft delete) a fact by setting active=false
  */
 export const deactivateFact = async (
-  factId: string,
+  factId: number,
   client = supabase
 ): Promise<boolean> => {
   const { error } = await client
@@ -248,7 +248,7 @@ export const deactivateFact = async (
  * Hard delete a fact from the database
  */
 export const deleteFact = async (
-  factId: string,
+  factId: number,
   client = supabase
 ): Promise<boolean> => {
   const { error } = await client.from("student_facts").delete().eq("id", factId)

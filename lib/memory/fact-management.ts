@@ -105,13 +105,15 @@ export async function getFactsForPrompt({
   subject = null,
   factTypes = null, // Allow limiting to specific fact types if needed
   client = browserClient,
-  maxFacts = 15 // Limit facts to prevent token overflow
+  maxFacts = 15, // Limit facts to prevent token overflow
+  timeframe = "all" // Timeframe filter
 }: {
   userId: string
   subject?: string | null
   factTypes?: FactType[] | null
   client?: SupabaseClient
   maxFacts?: number
+  timeframe?: string
 }): Promise<string> {
   try {
     // Build the query
@@ -132,6 +134,11 @@ export async function getFactsForPrompt({
     if (factTypes && factTypes.length > 0) {
       query = query.in("fact_type", factTypes)
     }
+
+    // TODO: Add timeframe filtering logic if needed
+    // if (timeframe && timeframe !== "all") {
+    //   // Implement timeframe filtering based on created_at or updated_at
+    // }
 
     const { data: facts, error } = await query
 

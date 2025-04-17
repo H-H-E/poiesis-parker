@@ -2,7 +2,7 @@ import { Tables } from "@/supabase/types"
 import { ChatPayload, MessageImage } from "@/types"
 import { encode } from "gpt-tokenizer"
 
-const buildBasePrompt = (
+export const buildBasePrompt = (
   prompt: string,
   profileContext: string,
   workspaceInstructions: string,

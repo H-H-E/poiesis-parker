@@ -103,12 +103,14 @@ export function getConversationMemoryRetriever({
   userId,
   client = supabase, // Default to browser client, pass appropriate client
   embeddingApiKey, // Pass API key if needed
-  k = 4 // Number of documents to retrieve
+  k = 4, // Number of documents to retrieve
+  timeframe = "all" // Timeframe filter
 }: {
   userId: string
   client?: SupabaseClient
   embeddingApiKey?: string
   k?: number
+  timeframe?: string
 }) {
   const embeddings = new OpenAIEmbeddings({
     openAIApiKey: embeddingApiKey ?? process.env.OPENAI_API_KEY
@@ -118,6 +120,9 @@ export function getConversationMemoryRetriever({
     tableName: CONVERSATION_MEMORY_TABLE_NAME,
     queryName: CONVERSATION_MEMORY_MATCH_FUNCTION
   })
+
+  // TODO: Implement timeframe filtering logic if needed
+  // This would need to be handled in the filter or at the database level
 
   return vectorStore.asRetriever({
     k: k,

@@ -30,7 +30,7 @@ export const Sidebar: FC<SidebarProps> = ({ contentType, showSidebar }) => {
   } = useContext(ChatbotUIContext)
 
   const params = useParams()
-  const locale = params.locale as string
+  const locale = params?.locale as string
 
   const chatFolders = folders.filter(folder => folder.type === "chats")
   const presetFolders = folders.filter(folder => folder.type === "presets")

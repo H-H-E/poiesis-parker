@@ -1344,6 +1344,44 @@ export type Database = {
           }
         ]
       }
+      student_facts: {
+        Row: {
+          id: number
+          created_at: string
+          updated_at: string | null
+          user_id: string
+          fact_type: string
+          details: Json
+          active: boolean
+        }
+        Insert: {
+          id?: number
+          created_at?: string
+          updated_at?: string | null
+          user_id: string
+          fact_type: string
+          details: Json
+          active?: boolean
+        }
+        Update: {
+          id?: number
+          created_at?: string
+          updated_at?: string | null
+          user_id?: string
+          fact_type?: string
+          details?: Json
+          active?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_facts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       global_settings: {
         Row: {
           id: number
