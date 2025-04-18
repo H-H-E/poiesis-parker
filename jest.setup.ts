@@ -2,9 +2,9 @@
 import { ReadableStream, TransformStream } from 'web-streams-polyfill/ponyfill';
 
 // @ts-ignore global assignment for Jest environment
-(global as any).ReadableStream = ReadableStream;
+(global as Record<string, unknown>).ReadableStream = ReadableStream;
 // @ts-ignore
-(global as any).TransformStream = TransformStream;
+(global as Record<string, unknown>).TransformStream = TransformStream;
 
 import '@testing-library/jest-dom';
 

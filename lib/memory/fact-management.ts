@@ -2,6 +2,11 @@ import { extractFactsFromMessages } from "./structured-memory"
 import type { BaseMessage } from "@langchain/core/messages"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { supabase as browserClient } from "@/lib/supabase/browser-client"
+import {
+  AIMessage,
+  HumanMessage,
+  SystemMessage
+} from "@langchain/core/messages"
 
 // Define the fact types that match our schema CHECK constraint
 export type FactType =
@@ -13,6 +18,7 @@ export type FactType =
   | "other"
 
 // Define the student fact structure manually
+// Ensure this matches your actual DB schema, especially optional fields
 export interface StudentFact {
   id?: string // Optional for new facts
   user_id: string
@@ -21,55 +27,134 @@ export interface StudentFact {
   subject?: string | null
   details: string
   confidence?: number | null
-  source_message_id?: string | null
+  source_message_id?: string | null // Consider adding source message tracking
   active?: boolean
-  tags?: string[] // Array of tags for categorizing facts
+  tags?: string[] // Array of tags for categorizing facts (ensure DB column exists)
+  context?: string | null // Context where the fact applies (for nuanced facts)
+  exception_context?: string | null // Context where the fact does NOT apply
+  observed_frequency?: number | null // How often observed (e.g., SEL)
   created_at?: string
   updated_at?: string
 }
 
+// Define a simpler type for messages passed from the client API route
+type SimpleMessage = { role: string; content: string }
+
 /**
- * Process a conversation to extract facts and store them in the database.
- * This combines Feature #3 (extraction) with Feature #4 (storage).
+ * Process a conversation to extract facts using a specified LLM (e.g., Gemini)
+ * and store them in the database.
+ *
+ * @param messages - Array of conversation messages (can be BaseMessage or SimpleMessage).
+ * @param userId - The ID of the user associated with the conversation.
+ * @param chatId - The ID of the chat (optional).
+ * @param apiKey - The API key for the LLM (e.g., Google AI Studio Key).
+ * @param modelName - The name of the model to use (defaults to gemini-1.5-flash-latest).
+ * @param client - The Supabase client instance.
+ * @returns A promise that resolves to an array of the stored StudentFact objects.
  */
 export async function processAndStoreConversationFacts({
   messages,
   userId,
   chatId,
-  llmApiKey,
-  modelName = "gpt-3.5-turbo",
+  apiKey, // Changed from llmApiKey to generic apiKey
+  modelName = "gemini-1.5-flash-latest", // Default Gemini model
   client = browserClient
 }: {
-  messages: BaseMessage[]
+  messages: BaseMessage[] | SimpleMessage[] // Allow both types
   userId: string
   chatId?: string
-  llmApiKey?: string
+  apiKey?: string // Gemini API Key
   modelName?: string
   client?: SupabaseClient
 }): Promise<StudentFact[]> {
-  // 1. Extract facts from messages using the fact extraction chain (Feature #3)
-  const extractedData = await extractFactsFromMessages({
-    messages,
-    llmApiKey,
-    modelName
+  // Convert simple message format to BaseMessage if necessary
+  const formattedMessages: BaseMessage[] = messages.map(msg => {
+    if ("_getType" in msg) {
+      return msg as BaseMessage // Already a BaseMessage
+    }
+    // Basic conversion based on role
+    switch (msg.role.toLowerCase()) {
+      case "user":
+      case "human":
+        return new HumanMessage({ content: msg.content })
+      case "ai":
+      case "assistant":
+        return new AIMessage({ content: msg.content })
+      case "system":
+        return new SystemMessage({ content: msg.content })
+      default:
+        console.warn(
+          `Unknown message role "${msg.role}", treating as HumanMessage`
+        )
+        return new HumanMessage({ content: msg.content })
+    }
   })
 
-  if (!extractedData.facts || extractedData.facts.length === 0) {
+  if (formattedMessages.length === 0) {
+    console.log("No messages provided for fact extraction.")
+    return []
+  }
+
+  // 1. Extract facts from messages using the updated fact extraction function
+  console.log(`Extracting facts using model: ${modelName}`)
+  const extractedData = await extractFactsFromMessages({
+    // Pass the API key
+    messages: formattedMessages,
+    apiKey: apiKey,
+    modelName: modelName
+  })
+
+  // Define the expected structure of a single extracted fact from the LLM
+  // This helps provide types for the mapping step
+  type ExtractedFact = {
+    fact_type: string // Initially string, validated below
+    subject?: string
+    details: string
+    confidence?: number
+    active?: boolean
+    tags?: string[]
+    context?: string
+    exception_context?: string
+    source_message_id?: string
+    observed_frequency?: number
+  }
+
+  if (!extractedData?.facts || extractedData.facts.length === 0) {
     console.log("No facts extracted from conversation")
     return []
   }
 
-  // 2. Map extracted facts to our StudentFact format
-  const factsToStore: StudentFact[] = extractedData.facts.map(fact => ({
-    user_id: userId,
-    chat_id: chatId || null,
-    fact_type: fact.fact_type as FactType,
-    subject: fact.subject || null,
-    details: fact.details,
-    // Optional fields:
-    confidence: null, // Could add confidence if the LLM provides it
-    active: true
-  }))
+  // Explicitly type the facts array after the check
+  const facts: ExtractedFact[] = extractedData.facts
+
+  // 2. Map extracted facts to our StudentFact format for insertion
+  // Use Omit to exclude fields automatically generated by the database (id, created_at, updated_at)
+  const factsToStore: Omit<StudentFact, "id" | "created_at" | "updated_at">[] =
+    facts.map((fact: ExtractedFact) => ({
+      user_id: userId,
+      chat_id: chatId || null,
+      // Ensure extracted fact_type is valid, default to 'other' if not
+      fact_type: [
+        "preference",
+        "struggle",
+        "goal",
+        "topic_interest",
+        "learning_style",
+        "other"
+      ].includes(fact.fact_type)
+        ? (fact.fact_type as FactType)
+        : "other",
+      subject: fact.subject || null,
+      details: fact.details,
+      // Safely access optional fields from extraction result
+      confidence: fact.confidence ?? null,
+      active: fact.active ?? true, // Default to active
+      tags: fact.tags ?? [], // Default to empty array if not present
+      context: fact.context ?? null,
+      exception_context: fact.exception_context ?? null,
+      source_message_id: fact.source_message_id ?? null,
+      observed_frequency: fact.observed_frequency ?? null
+    }))
 
   console.log(
     `Storing ${factsToStore.length} extracted facts for user ${userId}`
@@ -77,14 +162,14 @@ export async function processAndStoreConversationFacts({
 
   try {
     // 3. Store facts in the database
-    // Note: This requires the table to exist and the user to have appropriate permissions
     const { data: storedFacts, error } = await client
-      .from("student_facts")
+      .from("student_facts") // Ensure this table name is correct
       .insert(factsToStore)
       .select()
 
     if (error) {
       console.error("Error storing facts:", error)
+      // Consider more specific error handling or logging
       throw new Error(`Failed to store facts: ${error.message}`)
     }
 
@@ -92,6 +177,7 @@ export async function processAndStoreConversationFacts({
     return (storedFacts as StudentFact[]) || []
   } catch (error) {
     console.error("Error in fact storage process:", error)
+    // Re-throw or handle as appropriate for the calling context (e.g., API route)
     throw error
   }
 }
@@ -153,7 +239,7 @@ export async function getFactsForPrompt({
 
     // Format facts for the prompt in a helpful, structured way
     const formattedFacts = facts
-      .map(fact => {
+      .map((fact: StudentFact) => {
         const subjectStr = fact.subject ? ` [${fact.subject}]` : ""
         return `- ${fact.fact_type.toUpperCase()}${subjectStr}: ${fact.details}`
       })
@@ -196,13 +282,13 @@ export async function getFactsGroupedByTypeAndSubject({
 
     // Group facts by fact_type and by fact_type:subject
     return facts.reduce(
-      (grouped, fact) => {
+      (grouped: Record<string, StudentFact[]>, fact: StudentFact) => {
         // Group by fact_type
         const type = fact.fact_type
         if (!grouped[type]) {
           grouped[type] = []
         }
-        grouped[type].push(fact as StudentFact)
+        grouped[type].push(fact)
 
         // Then if subject exists, also group by fact_type:subject
         if (fact.subject) {
@@ -210,7 +296,7 @@ export async function getFactsGroupedByTypeAndSubject({
           if (!grouped[key]) {
             grouped[key] = []
           }
-          grouped[key].push(fact as StudentFact)
+          grouped[key].push(fact)
         }
 
         return grouped
@@ -360,7 +446,7 @@ export async function detectAndHandleFactConflicts({
   switch (strategy) {
     case "prefer_new": {
       // Deactivate all conflicting facts and add the new one
-      const deactivationPromises = existingFacts.map(fact =>
+      const deactivationPromises = existingFacts.map((fact: StudentFact) =>
         fact.id
           ? deactivateStudentFact({ factId: fact.id, client })
           : Promise.resolve(null)
@@ -389,7 +475,8 @@ export async function detectAndHandleFactConflicts({
     case "prefer_high_confidence": {
       // Compare confidence and keep the one with higher confidence
       const highestConfidenceFact = [...existingFacts].sort(
-        (a, b) => (b.confidence || 0) - (a.confidence || 0)
+        (a: StudentFact, b: StudentFact) =>
+          (b.confidence || 0) - (a.confidence || 0)
       )[0] as StudentFact
 
       if ((newFact.confidence || 0) > (highestConfidenceFact.confidence || 0)) {
@@ -432,7 +519,7 @@ export async function detectAndHandleFactConflicts({
     case "merge": {
       // Merge the information from new fact with the most recent existing fact
       const mostRecentFact = [...existingFacts].sort(
-        (a, b) =>
+        (a: StudentFact, b: StudentFact) =>
           new Date(b.updated_at || b.created_at || "").getTime() -
           new Date(a.updated_at || a.created_at || "").getTime()
       )[0] as StudentFact
@@ -576,14 +663,14 @@ export async function getContextuallyRelevantFacts({
     }
 
     // Score and sort facts by relevance
-    const scoredFacts = allFacts.map(fact => ({
+    const scoredFacts = allFacts.map((fact: any) => ({
       fact: fact as StudentFact,
       score: getRelevanceScore(fact as StudentFact, context)
     }))
 
     // Sort by score in descending order and take the top results
     const sortedFacts = scoredFacts
-      .sort((a, b) => b.score - a.score)
+      .sort((a: { score: number }, b: { score: number }) => b.score - a.score)
       .slice(0, limit)
 
     return sortedFacts.map(item => item.fact)
@@ -791,7 +878,7 @@ export async function searchStudentFacts({
       const queryTerms = searchParams.query
         .trim()
         .split(/\s+/)
-        .filter(term => term.length > 0)
+        .filter((term: string) => term.length > 0)
 
       if (queryTerms.length > 0) {
         // For each term, check if it appears in details or subject
@@ -898,7 +985,7 @@ export async function identifyKnowledgeGaps({
 
     // Find subjects with low coverage (only one fact)
     const lowCoverageSubjects = Object.entries(subjectCounts)
-      .filter(([_, count]) => count === 1)
+      .filter(([_, count]: [string, number]) => count === 1)
       .map(([subject]) => subject)
 
     // Generate recommended questions to fill knowledge gaps
@@ -1094,8 +1181,10 @@ export async function getAllFactTags({
 
     // Extract all tags from all facts and flatten into a single array
     const allTags = data
-      .filter(row => row.tags && Array.isArray(row.tags))
-      .flatMap(row => row.tags as string[])
+      .filter(
+        (row): row is { tags: string[] } => row.tags && Array.isArray(row.tags)
+      )
+      .flatMap(row => row.tags)
 
     // Remove duplicates
     return [...new Set(allTags)]
@@ -1178,11 +1267,11 @@ export async function generateUserKnowledgeProfile({
       ...new Set(
         typedFacts
           .filter(
-            fact =>
+            (fact: StudentFact) =>
               fact.subject &&
               new Date(fact.updated_at || fact.created_at || "") > thirtyDaysAgo
           )
-          .map(fact => fact.subject as string)
+          .map((fact: StudentFact) => fact.subject as string)
       )
     ]
 
@@ -1377,7 +1466,7 @@ export async function importUserFacts({
 
     // Prepare facts for import by extracting relevant fields
     // This ensures we don't try to import IDs or timestamps from the source system
-    const factsToImport = importData.facts.map(fact => ({
+    const factsToImport = importData.facts.map((fact: StudentFact) => ({
       fact_type: fact.fact_type,
       subject: fact.subject,
       details: fact.details,

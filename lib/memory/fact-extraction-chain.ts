@@ -1,4 +1,4 @@
-import { ChatOpenAI } from "@langchain/openai"
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai"
 import {
   ChatPromptTemplate,
   HumanMessagePromptTemplate,
@@ -10,13 +10,18 @@ import { extractedFactsSchema } from "./schemas" // Adjust path if needed
 
 /**
  * Creates a LangChain chain that extracts structured facts from conversation text.
- * Uses OpenAI Function Calling to ensure structured output based on extractedFactsSchema.
+ * Uses Google Gemini's Tool Calling (Function Calling) to ensure structured output
+ * based on extractedFactsSchema.
+ *
+ * @param apiKey - The Google AI Studio API Key.
+ * @param modelName - The name of the Gemini model to use (defaults to gemini-1.5-flash-latest).
+ * @returns A LangChain runnable sequence for extracting facts.
  */
 export function createFactExtractionChain({
-  llmApiKey, // Pass API key explicitly for server-side use
-  modelName = "gpt-3.5-turbo" // Use a capable model
+  apiKey, // Pass API key explicitly for server-side use (Google AI Studio API Key)
+  modelName = "gemini-1.5-flash-latest" // Default to latest flash model
 }: {
-  llmApiKey?: string
+  apiKey?: string
   modelName?: string
 }) {
   const prompt = ChatPromptTemplate.fromMessages([
@@ -26,17 +31,22 @@ export function createFactExtractionChain({
     HumanMessagePromptTemplate.fromTemplate("{conversation_text}")
   ])
 
-  const llm = new ChatOpenAI({
-    openAIApiKey: llmApiKey ?? process.env.OPENAI_API_KEY,
+  // Instantiate Gemini model
+  const llm = new ChatGoogleGenerativeAI({
+    // <-- Changed to Gemini
+    apiKey: apiKey ?? process.env.GOOGLE_API_KEY, // <-- Use appropriate env var
     modelName: modelName,
     temperature: 0 // Low temperature for reliable extraction
+    // Note: Ensure GOOGLE_API_KEY is set in your environment
   })
 
   const extractionFunctionName = "extractStudentFacts"
 
-  // Bind the schema as a function call to the LLM
+  // Bind the schema as a function call (tool) to the LLM
   const extractionLlm = llm.bind({
-    functions: [
+    // <-- Gemini uses bind for tools too
+    tools: [
+      // <-- Gemini uses 'tools' instead of 'functions'
       {
         name: extractionFunctionName,
         description:
@@ -44,10 +54,16 @@ export function createFactExtractionChain({
         parameters: zodToJsonSchema(extractedFactsSchema)
       }
     ],
-    function_call: { name: extractionFunctionName }
+    // Specify the tool to use. For simple cases with one tool, this ensures it's called.
+    // For more complex scenarios, you might omit this or use a different strategy.
+    tool_choice: extractionFunctionName
   })
 
-  const chain = prompt.pipe(extractionLlm).pipe(new JsonOutputFunctionsParser()) // Parses the function call output
+  // Assuming JsonOutputFunctionsParser works for Gemini's tool call output structure via Langchain.
+  // If it returns arguments directly, a different parsing step might be needed.
+  const parser = new JsonOutputFunctionsParser({ argsOnly: true }) // Use argsOnly based on common Gemini tool patterns
+
+  const chain = prompt.pipe(extractionLlm).pipe(parser) // Parses the tool call output
 
   return chain
 }

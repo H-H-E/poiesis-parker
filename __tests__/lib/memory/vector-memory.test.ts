@@ -36,8 +36,8 @@ jest.mock("langchain/text_splitter", () => {
     RecursiveCharacterTextSplitter: jest.fn().mockImplementation(() => ({
       createDocuments: jest.fn().mockImplementation((texts, metadatas) => {
         // Create simple document objects that match the expected structure
-        return Promise.resolve(texts.map((text, i) => ({
-          pageContent: text.substring(0, 50) + '...', // truncate for test
+        return Promise.resolve(texts.map((text: string, i: number) => ({
+          pageContent: `${text.substring(0, 50)}...`, // use template literal and truncate for test
           metadata: metadatas[i]
         })));
       })
@@ -97,7 +97,8 @@ describe('Vector Memory Tests', () => {
       );
 
       // Get the instance to check addDocuments call
-      const vectorStoreInstance = (SupabaseVectorStore as jest.Mock).mock.results[0].value;
+      const vectorStoreInstance = (SupabaseVectorStore as unknown as jest.Mock).mock
+        .results[0].value;
       expect(vectorStoreInstance.addDocuments).toHaveBeenCalled();
     });
 
@@ -122,7 +123,9 @@ describe('Vector Memory Tests', () => {
       });
 
       // Check that the text splitter received the correctly formatted input
-      const textSplitterInstance = (RecursiveCharacterTextSplitter as jest.Mock).mock.results[0].value;
+      const textSplitterInstance = (
+        RecursiveCharacterTextSplitter as unknown as jest.Mock
+      ).mock.results[0].value;
       expect(textSplitterInstance.createDocuments).toHaveBeenCalledWith(
         [expect.stringContaining('human: Hello')], // First part of the conversation text
         [expect.objectContaining({ user_id: 'user123', chat_id: 'chat123' })]
@@ -145,7 +148,7 @@ describe('Vector Memory Tests', () => {
 
     test('handles errors during ingestion', async () => {
       // Setup the test to fail at the addDocuments step
-      (SupabaseVectorStore as jest.Mock).mockImplementationOnce(() => ({
+      (SupabaseVectorStore as unknown as jest.Mock).mockImplementationOnce(() => ({
         addDocuments: jest.fn().mockRejectedValue(new Error('Mock DB error'))
       }));
 
@@ -187,7 +190,8 @@ describe('Vector Memory Tests', () => {
       );
 
       // Check that asRetriever was called with correct parameters
-      const vectorStoreInstance = (SupabaseVectorStore as jest.Mock).mock.results[0].value;
+      const vectorStoreInstance = (SupabaseVectorStore as unknown as jest.Mock).mock
+        .results[0].value;
       expect(vectorStoreInstance.asRetriever).toHaveBeenCalledWith({
         k: 5,
         filter: { user_id: 'user123' }
@@ -205,7 +209,8 @@ describe('Vector Memory Tests', () => {
       });
 
       // Check that asRetriever was called with default parameters
-      const vectorStoreInstance = (SupabaseVectorStore as jest.Mock).mock.results[0].value;
+      const vectorStoreInstance = (SupabaseVectorStore as unknown as jest.Mock).mock
+        .results[0].value;
       expect(vectorStoreInstance.asRetriever).toHaveBeenCalledWith({
         k: 4, // Default value
         filter: { user_id: 'user123' }

@@ -1,7 +1,7 @@
 import { ChatbotUIContext } from "@/context/context"
-import { Tables } from "@/supabase/types"
-import { ContentType } from "@/types"
-import { FC, useContext } from "react"
+import type { Tables } from "@/supabase/types"
+import type { ContentType, DataListType } from "@/types"
+import { useContext, type FC } from "react"
 import { SIDEBAR_WIDTH } from "../ui/dashboard"
 import { TabsContent } from "../ui/tabs"
 import { WorkspaceSwitcher } from "../utility/workspace-switcher"
@@ -47,7 +47,7 @@ export const Sidebar: FC<SidebarProps> = ({ contentType, showSidebar }) => {
 
   const renderSidebarContent = (
     contentType: ContentType,
-    data: any[],
+    data: DataListType,
     folders: Tables<"folders">[]
   ) => {
     return (

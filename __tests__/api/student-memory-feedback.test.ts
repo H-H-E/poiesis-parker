@@ -23,7 +23,7 @@ describe('Student Memory Feedback API', () => {
   });
 
   // Helper function to create a mock request
-  const createMockRequest = (body: any) => {
+  const createMockRequest = (body: unknown) => {
     return new NextRequest('http://localhost/api/student/memory/feedback', {
       method: 'POST',
       headers: {

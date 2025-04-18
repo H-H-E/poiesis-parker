@@ -57,14 +57,19 @@ import { createFactExtractionChain } from "./fact-extraction-chain" // Import fr
 
 /**
  * Runs the fact extraction chain on a given set of messages.
+ *
+ * @param messages - The array of conversation messages.
+ * @param apiKey - The API key for the LLM (e.g., Google AI Studio API Key).
+ * @param modelName - The name of the LLM model to use.
+ * @returns An object containing the extracted facts or an empty array on failure.
  */
 export async function extractFactsFromMessages({
   messages,
-  llmApiKey,
+  apiKey,
   modelName
 }: {
   messages: BaseMessage[]
-  llmApiKey?: string
+  apiKey?: string
   modelName?: string
 }) {
   if (!messages || messages.length === 0) {
@@ -76,13 +81,50 @@ export async function extractFactsFromMessages({
       msg =>
         `${msg._getType()}: ${typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content)}`
     )
-    .join("\n")
+    .join("\n\n")
 
-  // Call the imported function
-  const chain = createFactExtractionChain({ llmApiKey, modelName })
+  // Call the imported function, passing the apiKey
+  const chain = createFactExtractionChain({ apiKey, modelName })
 
   try {
     const result = await chain.invoke({ conversation_text: conversationText })
+
+    // Additional check: Gemini function/tool calls might return the args directly
+    // The parser in createFactExtractionChain handles this, but we double-check the structure.
+    // We expect result to be an object like { facts: [...] } after parsing.
+    if (typeof result !== "object" || result === null || !("facts" in result)) {
+      console.error(
+        "Fact extraction result is not in the expected format:",
+        result
+      )
+      // Attempt to handle cases where Gemini might return the array directly
+      if (Array.isArray(result)) {
+        // Validate if the array items look like facts (basic check)
+        if (
+          result.every(
+            item =>
+              typeof item === "object" &&
+              item !== null &&
+              "details" in item &&
+              "fact_type" in item
+          )
+        ) {
+          console.log("Adapting direct array result from fact extraction.")
+          const validatedResult = { facts: result }
+          const parsedResult = extractedFactsSchema.safeParse(validatedResult)
+          if (parsedResult.success) {
+            console.log("Extracted facts (adapted):", parsedResult.data.facts)
+            return parsedResult.data
+          }
+        }
+      }
+      // If not adaptable or validation fails, return empty
+      console.error(
+        "Fact extraction validation failed after attempting adaptation."
+      )
+      return { facts: [] }
+    }
+
     // Validate the result against the schema (recommended)
     const parsedResult = extractedFactsSchema.safeParse(result)
     if (parsedResult.success) {
