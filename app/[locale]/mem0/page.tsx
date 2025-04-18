@@ -1,7 +1,6 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { KidFriendlyDashboard } from "@/components/kid-friendly-dashboard"
 import { useRouter, useParams } from "next/navigation"
 
 export default function Mem0DashboardPage() {
@@ -27,8 +26,6 @@ export default function Mem0DashboardPage() {
             Settings
           </Button>
         </div>
-
-        <KidFriendlyDashboard locale={locale} />
       </div>
     </main>
   )

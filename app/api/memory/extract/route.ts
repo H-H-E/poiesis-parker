@@ -1,7 +1,8 @@
 import { processAndStoreConversationFacts } from "@/lib/memory/fact-management"
-import { createClient } from "@/lib/supabase/server-client" // Use server client for security
+import { createClient } from "@/lib/supabase/server" // Use server client for security
 import { NextResponse } from "next/server"
 import type { BaseMessage } from "@langchain/core/messages"
+import { cookies } from "next/headers"
 
 // Define expected structure for incoming messages
 type SimpleMessage = { role: string; content: string }
@@ -31,7 +32,8 @@ interface ExtractRequestBody {
  */
 export async function POST(request: Request) {
   // Ensure @/lib/supabase/server-client exists and is correctly configured
-  const supabase = createClient()
+  const cookieStore = cookies()
+  const supabase = createClient(cookieStore)
   const {
     data: { user },
     error: authError
