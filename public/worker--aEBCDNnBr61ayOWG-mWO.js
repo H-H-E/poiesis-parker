@@ -1,0 +1,1 @@
+self.__WB_DISABLE_DEV_LOGS=!0,self.addEventListener("message",(e=>{e.data&&"SKIP_WAITING"===e.data.type&&self.skipWaiting()})),self.addEventListener("fetch",(e=>{}));

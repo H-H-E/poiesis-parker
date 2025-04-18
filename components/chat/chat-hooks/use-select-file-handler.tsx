@@ -2,7 +2,7 @@ import { ChatbotUIContext } from "@/context/context"
 import { createDocXFile, createFile } from "@/db/files"
 import { LLM_LIST } from "@/lib/models/llm/llm-list"
 import mammoth from "mammoth"
-import { useContext, useEffect, useState } from "react"
+import { useCallback, useContext, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 export const ACCEPTED_FILE_TYPES = [
@@ -28,11 +28,7 @@ export const useSelectFileHandler = () => {
 
   const [filesToAccept, setFilesToAccept] = useState(ACCEPTED_FILE_TYPES)
 
-  useEffect(() => {
-    handleFilesToAccept()
-  }, [chatSettings?.model])
-
-  const handleFilesToAccept = () => {
+  const handleFilesToAccept = useCallback(() => {
     const model = chatSettings?.model
     const FULL_MODEL = LLM_LIST.find(llm => llm.modelId === model)
 
@@ -43,7 +39,11 @@ export const useSelectFileHandler = () => {
         ? `${ACCEPTED_FILE_TYPES},image/*`
         : ACCEPTED_FILE_TYPES
     )
-  }
+  }, [chatSettings?.model])
+
+  useEffect(() => {
+    handleFilesToAccept()
+  }, [handleFilesToAccept])
 
   const handleSelectDeviceFile = async (file: File) => {
     if (!profile || !selectedWorkspace || !chatSettings) return

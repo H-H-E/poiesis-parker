@@ -78,7 +78,9 @@ export function createStylePreferenceExtractionChain({
     function_call: { name: extractionFunctionName }
   })
 
-  const chain = prompt.pipe(extractionLlm).pipe(new JsonOutputFunctionsParser())
+  const chain = prompt
+    .pipe(extractionLlm as any)
+    .pipe(new JsonOutputFunctionsParser())
 
   return chain
 }
@@ -130,7 +132,7 @@ export function createTopicEngagementExtractionChain({
     function_call: { name: extractionFunctionName }
   })
 
-  return prompt.pipe(extractionLlm).pipe(new JsonOutputFunctionsParser())
+  return prompt.pipe(extractionLlm as any).pipe(new JsonOutputFunctionsParser())
 }
 
 /**
@@ -180,7 +182,7 @@ export function createSocialEmotionalExtractionChain({
     function_call: { name: extractionFunctionName }
   })
 
-  return prompt.pipe(extractionLlm).pipe(new JsonOutputFunctionsParser())
+  return prompt.pipe(extractionLlm as any).pipe(new JsonOutputFunctionsParser())
 }
 
 /**
@@ -229,7 +231,7 @@ export function createComprehensiveExtractionChain({
     function_call: { name: extractionFunctionName }
   })
 
-  return prompt.pipe(extractionLlm).pipe(new JsonOutputFunctionsParser())
+  return prompt.pipe(extractionLlm as any).pipe(new JsonOutputFunctionsParser())
 }
 
 /**

@@ -198,11 +198,13 @@ export async function POST(request: Request) {
       }
     }
 
-    const secondResponse = await openai.chat.completions.create({
-      model: chatSettings.model as ChatCompletionCreateParamsBase["model"],
-      messages,
-      stream: true
-    })
+    const secondResponse = await openai.chat.completions
+      .create({
+        model: chatSettings.model as ChatCompletionCreateParamsBase["model"],
+        messages,
+        stream: true
+      })
+      .asResponse()
 
     const stream = OpenAIStream(secondResponse)
 

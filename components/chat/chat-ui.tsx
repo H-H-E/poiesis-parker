@@ -23,6 +23,9 @@ import { ChatSecondaryButtons } from "./chat-secondary-buttons"
 
 type ChatUIProps = Record<string, unknown>
 
+// Timeout duration for user inactivity tracking
+const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000
+
 export const ChatUI: FC<ChatUIProps> = () => {
   useHotkey("o", () => handleNewChat())
 
@@ -64,9 +67,9 @@ export const ChatUI: FC<ChatUIProps> = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const [isChatLoading, setIsChatLoading] = useState(false)
+  const [isUserActive, setIsUserActive] = useState(true)
 
-  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000
+  const inactivityTimer = useRef<number | null>(null)
 
   const fetchMessages = useCallback(
     async (currentChatId: string) => {
@@ -226,9 +229,9 @@ export const ChatUI: FC<ChatUIProps> = () => {
       `Chat ${currentChatId}: Inactivity detected (${INACTIVITY_TIMEOUT_MS / 1000 / 60} min), triggering memory extraction...`
     )
 
-    if (inactivityTimerRef.current) {
-      clearTimeout(inactivityTimerRef.current)
-      inactivityTimerRef.current = null
+    if (inactivityTimer.current) {
+      clearTimeout(inactivityTimer.current)
+      inactivityTimer.current = null
     }
 
     const messagesToProcess = chatMessages.map((cm: ChatMessage) => ({
@@ -266,11 +269,11 @@ export const ChatUI: FC<ChatUIProps> = () => {
   }, [profile?.user_id, selectedChat?.id, chatMessages])
 
   const resetInactivityTimer = useCallback(() => {
-    if (inactivityTimerRef.current) {
-      clearTimeout(inactivityTimerRef.current)
+    if (inactivityTimer.current) {
+      clearTimeout(inactivityTimer.current)
     }
     if (selectedChat?.id) {
-      inactivityTimerRef.current = setTimeout(
+      inactivityTimer.current = window.setTimeout(
         triggerMemoryExtraction,
         INACTIVITY_TIMEOUT_MS
       )
@@ -281,9 +284,9 @@ export const ChatUI: FC<ChatUIProps> = () => {
     resetInactivityTimer()
 
     return () => {
-      if (inactivityTimerRef.current) {
-        clearTimeout(inactivityTimerRef.current)
-        inactivityTimerRef.current = null
+      if (inactivityTimer.current) {
+        clearTimeout(inactivityTimer.current)
+        inactivityTimer.current = null
       }
     }
   }, [resetInactivityTimer])
@@ -317,6 +320,42 @@ export const ChatUI: FC<ChatUIProps> = () => {
     fetchChat,
     fetchMessages
   ])
+
+  const handleMouseMove = useCallback(() => {
+    setIsUserActive(true)
+    if (inactivityTimer.current !== null) {
+      clearTimeout(inactivityTimer.current)
+    }
+    inactivityTimer.current = window.setTimeout(() => {
+      setIsUserActive(false)
+    }, INACTIVITY_TIMEOUT_MS)
+  }, [])
+
+  const handleVisibilityChange = useCallback(() => {
+    if (document.visibilityState === "visible") {
+      setIsUserActive(true)
+      if (inactivityTimer.current !== null) {
+        clearTimeout(inactivityTimer.current)
+      }
+      inactivityTimer.current = window.setTimeout(() => {
+        setIsUserActive(false)
+      }, INACTIVITY_TIMEOUT_MS)
+    } else {
+      setIsUserActive(false)
+      if (inactivityTimer.current !== null) {
+        clearTimeout(inactivityTimer.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener("mousemove", handleMouseMove)
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+    }
+  }, [handleMouseMove, handleVisibilityChange])
 
   if (loading) {
     return <Loading />

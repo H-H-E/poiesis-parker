@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { SupabaseClient } from "@supabase/supabase-js"
 
+export const dynamic = "force-dynamic"
+
 // Placeholder for admin check - replace with your actual implementation
 async function isAdmin(
   userId: string,

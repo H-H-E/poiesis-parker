@@ -24,13 +24,15 @@ export async function POST(request: Request) {
       baseURL: "https://openrouter.ai/api/v1"
     })
 
-    const response = await openai.chat.completions.create({
-      model: chatSettings.model as ChatCompletionCreateParamsBase["model"],
-      messages: messages as ChatCompletionCreateParamsBase["messages"],
-      temperature: chatSettings.temperature,
-      max_tokens: undefined,
-      stream: true
-    })
+    const response = await openai.chat.completions
+      .create({
+        model: chatSettings.model as ChatCompletionCreateParamsBase["model"],
+        messages: messages as ChatCompletionCreateParamsBase["messages"],
+        temperature: chatSettings.temperature,
+        max_tokens: undefined,
+        stream: true
+      })
+      .asResponse()
 
     const stream = OpenAIStream(response)
 

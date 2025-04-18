@@ -10,23 +10,9 @@ import {
   IconCircleXFilled,
   IconLoader2
 } from "@tabler/icons-react"
-import { FC, useCallback, useState } from "react"
+import { useCallback, useRef, useState } from "react"
+import type { FC } from "react"
 import { LimitDisplay } from "../ui/limit-display"
-
-// Moved debounce function outside the component
-const debounce = (func: (...args: any[]) => void, wait: number) => {
-  let timeout: NodeJS.Timeout | null = null
-
-  return (...args: any[]) => {
-    const later = () => {
-      if (timeout) clearTimeout(timeout)
-      func(...args)
-    }
-
-    if (timeout) clearTimeout(timeout)
-    timeout = setTimeout(later, wait)
-  }
-}
 
 interface ProfileStepProps {
   username: string
@@ -46,9 +32,15 @@ export const ProfileStep: FC<ProfileStepProps> = ({
   onDisplayNameChange
 }) => {
   const [loading, setLoading] = useState(false)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const checkUsernameAvailability = useCallback(
-    debounce(async (username: string) => {
+    (username: string) => {
+      // Clear any pending timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+
       if (!username) return
 
       if (username.length < PROFILE_USERNAME_MIN) {
@@ -72,18 +64,24 @@ export const ProfileStep: FC<ProfileStepProps> = ({
 
       setLoading(true)
 
-      const response = await fetch(`/api/username/available`, {
-        method: "POST",
-        body: JSON.stringify({ username })
-      })
+      // Set new timeout
+      timeoutRef.current = setTimeout(async () => {
+        try {
+          const response = await fetch("/api/username/available", {
+            method: "POST",
+            body: JSON.stringify({ username })
+          })
 
-      const data = await response.json()
-      const isAvailable = data.isAvailable
-
-      onUsernameAvailableChange(isAvailable)
-
-      setLoading(false)
-    }, 500),
+          const data = await response.json()
+          onUsernameAvailableChange(data.isAvailable)
+        } catch (error) {
+          console.error("Error checking username availability:", error)
+          onUsernameAvailableChange(false)
+        } finally {
+          setLoading(false)
+        }
+      }, 500)
+    },
     [onUsernameAvailableChange]
   )
 

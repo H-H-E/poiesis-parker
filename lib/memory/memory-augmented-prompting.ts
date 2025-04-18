@@ -134,13 +134,13 @@ Adapt your communication style to match their preferences - be aware of what the
     condenseQuestionPrompt,
     llm,
     new StringOutputParser()
-  ]).withConfig({ runName: "StandaloneQuestionGeneration" })
+  ] as any).withConfig({ runName: "StandaloneQuestionGeneration" })
 
   const retrieverChain = RunnableSequence.from([
     (input: { standalone_question: string }) => input.standalone_question,
     retriever,
     formatDocumentsAsString
-  ]).withConfig({ runName: "RetrieveSemanticMemory" })
+  ] as any).withConfig({ runName: "RetrieveSemanticMemory" })
 
   // 5. Main RAG Chain with memory augmentation
   const memoryAugmentedChain = RunnableSequence.from([

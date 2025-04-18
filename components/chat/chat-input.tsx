@@ -9,7 +9,7 @@ import {
   IconSend
 } from "@tabler/icons-react"
 import Image from "next/image"
-import { FC, useContext, useEffect, useRef, useState } from "react"
+import { useContext, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Input } from "../ui/input"
 import { TextareaAutosize } from "../ui/textarea-autosize"
@@ -21,9 +21,9 @@ import { usePromptAndCommand } from "./chat-hooks/use-prompt-and-command"
 import { useSelectFileHandler } from "./chat-hooks/use-select-file-handler"
 import { toast } from "sonner"
 
-interface ChatInputProps {}
+type ChatInputProps = Record<string, never>
 
-export const ChatInput: FC<ChatInputProps> = ({}) => {
+export const ChatInput = () => {
   const { t } = useTranslation()
 
   useHotkey("l", () => {
@@ -79,7 +79,7 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
     setTimeout(() => {
       handleFocusChatInput()
     }, 200) // FIX: hacky
-  }, [selectedPreset, selectedAssistant])
+  }, [handleFocusChatInput])
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (!isTyping && event.key === "Enter" && !event.shiftKey) {
@@ -151,7 +151,7 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
       if (item.type.indexOf("image") === 0) {
         if (!imagesAllowed) {
           toast.error(
-            `Images are not supported for this model. Use models like GPT-4 Vision instead.`
+            "Images are not supported for this model. Use models like GPT-4 Vision instead."
           )
           return
         }
@@ -162,31 +162,38 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
     }
   }
 
+  const handleToolRemove = (toolId: string) => {
+    setSelectedTools(
+      selectedTools?.filter(selectedTool => selectedTool.id !== toolId)
+    )
+  }
+
+  const handleToolKeyDown = (event: React.KeyboardEvent, toolId: string) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      handleToolRemove(toolId)
+    }
+  }
+
   return (
     <>
       <div className="flex flex-col flex-wrap justify-center gap-2">
         <ChatFilesDisplay />
 
-        {selectedTools &&
-          selectedTools.map((tool, index) => (
-            <div
-              key={index}
-              className="flex justify-center"
-              onClick={() =>
-                setSelectedTools(
-                  selectedTools.filter(
-                    selectedTool => selectedTool.id !== tool.id
-                  )
-                )
-              }
-            >
-              <div className="flex cursor-pointer items-center justify-center space-x-1 rounded-lg bg-purple-600 px-3 py-1 hover:opacity-50">
-                <IconBolt size={20} />
+        {selectedTools?.map(tool => (
+          <button
+            key={tool.id}
+            className="flex justify-center"
+            onClick={() => handleToolRemove(tool.id)}
+            type="button"
+          >
+            <div className="flex cursor-pointer items-center justify-center space-x-1 rounded-lg bg-purple-600 px-3 py-1 hover:opacity-50">
+              <IconBolt size={20} />
 
-                <div>{tool.name}</div>
-              </div>
+              <div>{tool.name}</div>
             </div>
-          ))}
+          </button>
+        ))}
 
         {selectedAssistant && (
           <div className="border-primary mx-auto flex w-fit items-center space-x-2 rounded-lg border p-1.5">
@@ -241,7 +248,7 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
           className="ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring text-md flex w-full resize-none rounded-md border-none bg-transparent px-14 py-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           placeholder={t(
             // `Ask anything. Type "@" for assistants, "/" for prompts, "#" for files, and "!" for tools.`
-            `Ask anything. Type @  /  #  !`
+            "Ask anything. Type @  /  #  !"
           )}
           onValueChange={handleInputChange}
           value={userInput}

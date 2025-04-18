@@ -68,6 +68,7 @@ export async function POST(request: Request) {
     ) {
       const systemMessage = messages[0]
       if (
+        typeof systemMessage.content === "string" &&
         !systemMessage.content.includes(
           "Student Instructions (Apply to all student interactions):"
         )
@@ -105,13 +106,15 @@ export async function POST(request: Request) {
       organization: profile.openai_organization_id
     })
 
-    const response = await openai.chat.completions.create({
-      model: chatSettings.model as ChatCompletionCreateParamsBase["model"],
-      messages: messages as ChatCompletionCreateParamsBase["messages"],
-      temperature: chatSettings.temperature,
-      max_tokens: 4096,
-      stream: true
-    })
+    const response = await openai.chat.completions
+      .create({
+        model: chatSettings.model as ChatCompletionCreateParamsBase["model"],
+        messages: messages as ChatCompletionCreateParamsBase["messages"],
+        temperature: chatSettings.temperature,
+        max_tokens: 4096,
+        stream: true
+      })
+      .asResponse()
 
     // Create a function to handle the stream and track tokens
     const streamWithTokenTracking = OpenAIStream(response, {

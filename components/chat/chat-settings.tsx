@@ -1,16 +1,16 @@
 import { ChatbotUIContext } from "@/context/context"
 import { CHAT_SETTING_LIMITS } from "@/lib/chat-setting-limits"
 import useHotkey from "@/lib/hooks/use-hotkey"
-import { LLMID, ModelProvider } from "@/types"
+import type { LLMID, ModelProvider } from "@/types"
 import { IconAdjustmentsHorizontal } from "@tabler/icons-react"
-import { FC, useContext, useEffect, useRef } from "react"
+import { useContext, useEffect, useRef } from "react"
 import { Button } from "../ui/button"
 import { ChatSettingsForm } from "../ui/chat-settings-form"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
 
-interface ChatSettingsProps {}
+type ChatSettingsProps = Record<string, never>
 
-export const ChatSettings: FC<ChatSettingsProps> = ({}) => {
+export const ChatSettings = () => {
   useHotkey("i", () => handleClick())
 
   const {
@@ -44,7 +44,7 @@ export const ChatSettings: FC<ChatSettingsProps> = ({}) => {
         CHAT_SETTING_LIMITS[chatSettings.model]?.MAX_CONTEXT_LENGTH || 4096
       )
     })
-  }, [chatSettings?.model])
+  }, [chatSettings?.model, chatSettings, setChatSettings])
 
   if (!chatSettings) return null
 

@@ -23,11 +23,13 @@ export async function POST(request: Request) {
       baseURL: "https://api.perplexity.ai/"
     })
 
-    const response = await perplexity.chat.completions.create({
-      model: chatSettings.model,
-      messages,
-      stream: true
-    })
+    const response = await perplexity.chat.completions
+      .create({
+        model: chatSettings.model,
+        messages,
+        stream: true
+      })
+      .asResponse()
 
     const stream = OpenAIStream(response)
 

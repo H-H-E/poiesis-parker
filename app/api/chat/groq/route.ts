@@ -23,13 +23,15 @@ export async function POST(request: Request) {
       baseURL: "https://api.groq.com/openai/v1"
     })
 
-    const response = await groq.chat.completions.create({
-      model: chatSettings.model,
-      messages,
-      max_tokens:
-        CHAT_SETTING_LIMITS[chatSettings.model].MAX_TOKEN_OUTPUT_LENGTH,
-      stream: true
-    })
+    const response = await groq.chat.completions
+      .create({
+        model: chatSettings.model,
+        messages,
+        max_tokens:
+          CHAT_SETTING_LIMITS[chatSettings.model].MAX_TOKEN_OUTPUT_LENGTH,
+        stream: true
+      })
+      .asResponse()
 
     // Convert the response into a friendly text-stream.
     const stream = OpenAIStream(response)

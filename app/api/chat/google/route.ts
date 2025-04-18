@@ -2,6 +2,7 @@ import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
 import type { ChatSettings } from "@/types"
 import { GoogleGenAI } from "@google/genai"
 import type { GoogleLLMID } from "@/types/llms"
+import { handleApiError, formatErrorMessage } from "@/lib/error-logger"
 
 export const runtime = "edge"
 
@@ -136,30 +137,23 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     console.error("Error occurred:", error)
 
-    let errorMessage = "An unexpected error occurred"
-    let errorCode = 500
-
-    if (error instanceof Error) {
-      errorMessage = error.message
-    }
-
-    if (typeof error === "object" && error !== null && "status" in error) {
-      const status = (error as { status: unknown }).status
-      if (typeof status === "number") {
-        errorCode = status
-      }
-    }
+    const errorResponse = handleApiError(error, "Google Chat API")
+    let { message: errorMessage, status: errorCode } = errorResponse
 
     if (errorMessage.toLowerCase().includes("api key not found")) {
       errorMessage =
         "Google Gemini API Key not found. Please set it in your profile settings."
-    } else if (
+    }
+
+    if (
       errorMessage.toLowerCase().includes("api key not valid") ||
       errorMessage.toLowerCase().includes("invalid api key")
     ) {
       errorMessage =
         "Google Gemini API Key is incorrect. Please fix it in your profile settings."
-    } else if (errorCode === 404) {
+    }
+
+    if (errorCode === 404) {
       const modelName =
         typeof chatSettings === "object" && chatSettings.model
           ? chatSettings.model

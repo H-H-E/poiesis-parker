@@ -35,7 +35,7 @@ export function createFactExtractionChain({
   const llm = new ChatGoogleGenerativeAI({
     // <-- Changed to Gemini
     apiKey: apiKey ?? process.env.GOOGLE_API_KEY, // <-- Use appropriate env var
-    modelName: modelName,
+    model: modelName, // Changed from modelName to model
     temperature: 0 // Low temperature for reliable extraction
     // Note: Ensure GOOGLE_API_KEY is set in your environment
   })
