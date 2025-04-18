@@ -8,49 +8,52 @@ import { JsonOutputFunctionsParser } from "langchain/output_parsers"
 import { zodToJsonSchema } from "zod-to-json-schema"
 import { extractedFactsSchema } from "./schemas" // Adjust path if needed
 import type { BaseMessage } from "@langchain/core/messages"
+import { createFactExtractionChain } from "./fact-extraction-chain" // Import from new file
 
 /**
- * Creates a LangChain chain that extracts structured facts from conversation text.
+ * ============================================================================
+ * Fact Extraction Subsystem
+ * ============================================================================
+ *
+ * Overview:
+ * ----------
+ * This module is responsible for extracting structured information ("facts")
+ * from unstructured conversation text using a Large Language Model (LLM)
+ * enhanced with OpenAI's Function Calling feature for reliable output formatting.
+ *
+ * Key Components:
+ * --------------
+ * 1.  `createFactExtractionChain` (from ./fact-extraction-chain): Builds the
+ *     LangChain Runnable sequence responsible for the core extraction logic.
+ * 2.  `extractFactsFromMessages`: A higher-level function that takes conversation
+ *     messages, formats them, invokes the chain, and validates the output.
+ * 3.  `extractedFactsSchema` (from ./schemas): A Zod schema defining the desired
+ *     structured output format for the extracted facts. This ensures data
+ *     consistency.
+ *
+ * Process Flow (`extractFactsFromMessages`):
+ * ------------------------------------------
+ * 1.  Input: Receives an array of `BaseMessage` objects representing the
+ *     conversation.
+ * 2.  Formatting: Concatenates messages into a single string `conversation_text`.
+ * 3.  Chain Invocation: Calls `createFactExtractionChain` to get the LLM chain.
+ * 4.  Execution: Invokes the configured chain with the `conversation_text`.
+ * 5.  Validation: The raw output from the LLM (parsed JSON) is rigorously
+ *     validated against the original `extractedFactsSchema` using `safeParse`.
+ * 6.  Output: Returns an object `{ facts: [...] }` containing the validated array
+ *     of extracted facts. If extraction fails or validation doesn't pass, it
+ *     returns `{ facts: [] }` to prevent downstream errors.
+ *
+ * Design Choices:
+ * --------------
+ * - Function Calling: Used to ensure the LLM produces structured output conforming
+ *   to a predefined schema, greatly improving reliability over simple text parsing.
+ * - Zod Schema: Provides a single source of truth for the data structure and enables
+ *   robust validation of the LLM's output.
+ * - Temperature 0: Minimizes randomness, making the extraction process more
+ *   predictable and consistent.
+ * ============================================================================
  */
-export function createFactExtractionChain({
-  llmApiKey, // Pass API key explicitly for server-side use
-  modelName = "gpt-3.5-turbo" // Use a capable model
-}: {
-  llmApiKey?: string
-  modelName?: string
-}) {
-  const prompt = ChatPromptTemplate.fromMessages([
-    SystemMessagePromptTemplate.fromTemplate(
-      "Extract relevant facts, preferences, learning goals, and struggles mentioned by the student in the following conversation. Focus on atomic pieces of information. If no relevant facts are found, return an empty array."
-    ),
-    HumanMessagePromptTemplate.fromTemplate("{conversation_text}")
-  ])
-
-  const llm = new ChatOpenAI({
-    openAIApiKey: llmApiKey ?? process.env.OPENAI_API_KEY,
-    modelName: modelName,
-    temperature: 0 // Low temperature for reliable extraction
-  })
-
-  const extractionFunctionName = "extractStudentFacts"
-
-  // Bind the schema as a function call to the LLM
-  const extractionLlm = llm.bind({
-    functions: [
-      {
-        name: extractionFunctionName,
-        description:
-          "Extracts facts, preferences, goals, or struggles from a student conversation.",
-        parameters: zodToJsonSchema(extractedFactsSchema)
-      }
-    ],
-    function_call: { name: extractionFunctionName }
-  })
-
-  const chain = prompt.pipe(extractionLlm).pipe(new JsonOutputFunctionsParser()) // Parses the function call output
-
-  return chain
-}
 
 /**
  * Runs the fact extraction chain on a given set of messages.
@@ -75,11 +78,12 @@ export async function extractFactsFromMessages({
     )
     .join("\n")
 
+  // Call the imported function
   const chain = createFactExtractionChain({ llmApiKey, modelName })
 
   try {
     const result = await chain.invoke({ conversation_text: conversationText })
-    // Validate the result against the schema (optional but recommended)
+    // Validate the result against the schema (recommended)
     const parsedResult = extractedFactsSchema.safeParse(result)
     if (parsedResult.success) {
       console.log("Extracted facts:", parsedResult.data.facts)
