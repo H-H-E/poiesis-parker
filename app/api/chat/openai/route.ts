@@ -1,16 +1,12 @@
 import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
 import type { ChatSettings } from "@/types"
-import { OpenAIStream, StreamingTextResponse } from "ai"
+import { StreamingTextResponse, generateText } from "ai"
 import type { ServerRuntime } from "next"
-import OpenAI from "openai"
-import type {
-  ChatCompletionCreateParamsBase,
-  ChatCompletionMessageParam
-} from "openai/resources/chat/completions.mjs"
+import type { ChatCompletionMessageParam } from "openai/resources/chat/completions.mjs"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { countTokens, logTokenUsage } from "@/lib/token-usage"
-import type { SupabaseClient } from "@supabase/supabase-js"
+import { createOpenAIProvider } from "@/lib/ai/providers"
 
 export const runtime: ServerRuntime = "edge"
 
@@ -32,7 +28,10 @@ export async function POST(request: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
       {
         cookies: {
-          get: name => cookieStore.get(name)?.value,
+          get: name => {
+            const cookie = cookieStore.get(name)
+            return cookie?.value
+          },
           set: (name, value, options) => {
             cookieStore.set(name, value, options)
             return
@@ -60,20 +59,31 @@ export async function POST(request: Request) {
       globalSettings = null
     }
 
+    // Process messages - ensure system message content is a string
+    const processedMessages = messages.map(msg => {
+      if (msg.role === "system" && typeof msg.content !== "string") {
+        return { ...msg, content: "System instructions" } // Fallback if not string
+      }
+      return msg
+    })
+
     // Check if the first message is a system message and append the global student prompt if needed
     if (
-      messages.length > 0 &&
-      messages[0].role === "system" &&
+      processedMessages.length > 0 &&
+      processedMessages[0].role === "system" &&
+      typeof processedMessages[0].content === "string" &&
       globalSettings?.student_system_prompt
     ) {
-      const systemMessage = messages[0]
+      const systemMessage = processedMessages[0]
+      const systemContent = systemMessage.content as string
+
       if (
-        !systemMessage.content.includes(
+        !systemContent.includes(
           "Student Instructions (Apply to all student interactions):"
         )
       ) {
         // Add global student prompt after admin instructions but before other content
-        const contentParts = systemMessage.content.split(
+        const contentParts = systemContent.split(
           "Admin Instructions (Always Follow These First):"
         )
         if (contentParts.length > 1) {
@@ -83,41 +93,39 @@ export async function POST(request: Request) {
           systemMessage.content = `${beforeAdmin}Admin Instructions (Always Follow These First):${adminParts[0]}\n\nStudent Instructions (Apply to all student interactions):\n${globalSettings.student_system_prompt}\n\n${adminParts.slice(1).join("\n\n")}`
         } else {
           // No admin instructions, add after today's date
-          const dateParts = systemMessage.content.split("Today is")
+          const dateParts = systemContent.split("Today is")
           if (dateParts.length > 1) {
             const [beforeDate, afterDate] = dateParts
             const dateContent = afterDate.split("\n\n")
             systemMessage.content = `${beforeDate}Today is${dateContent[0]}\n\nStudent Instructions (Apply to all student interactions):\n${globalSettings.student_system_prompt}\n\n${dateContent.slice(1).join("\n\n")}`
           } else {
             // Fallback: Add to the beginning
-            systemMessage.content = `Student Instructions (Apply to all student interactions):\n${globalSettings.student_system_prompt}\n\n${systemMessage.content}`
+            systemMessage.content = `Student Instructions (Apply to all student interactions):\n${globalSettings.student_system_prompt}\n\n${systemContent}`
           }
         }
       }
     }
 
     // Count input tokens
-    const messagesText = JSON.stringify(messages)
+    const messagesText = JSON.stringify(processedMessages)
     const inputTokens = countTokens(messagesText)
 
-    const openai = new OpenAI({
-      apiKey: profile.openai_api_key || "",
-      organization: profile.openai_organization_id
-    })
+    // Create OpenAI provider with API key
+    const openaiProvider = createOpenAIProvider(
+      profile.openai_api_key || "",
+      profile.openai_organization_id || undefined
+    )
 
-    const response = await openai.chat.completions.create({
-      model: chatSettings.model as ChatCompletionCreateParamsBase["model"],
-      messages: messages as ChatCompletionCreateParamsBase["messages"],
+    // Use the new generateText function from AI SDK v4 (non-streaming)
+    const { textStream } = await generateText({
+      model: openaiProvider(chatSettings.model),
+      messages: processedMessages,
       temperature: chatSettings.temperature,
-      max_tokens: 4096,
-      stream: true
-    })
-
-    // Create a function to handle the stream and track tokens
-    const streamWithTokenTracking = OpenAIStream(response, {
-      async onFinal(completion) {
+      maxTokens: 4096,
+      stream: true,
+      onFinish: async completion => {
         // Count output tokens
-        const outputTokens = countTokens(completion)
+        const outputTokens = countTokens(completion.content)
 
         // Get userId from profile
         const {
@@ -138,13 +146,14 @@ export async function POST(request: Request) {
       }
     })
 
-    return new StreamingTextResponse(streamWithTokenTracking)
+    // Return streaming response
+    return new StreamingTextResponse(textStream)
   } catch (error: unknown) {
     let errorMessage =
       error instanceof Error ? error.message : "An unexpected error occurred"
     const errorCode =
       typeof error === "object" && error !== null && "status" in error
-        ? ((error as any).status as number)
+        ? (error as { status: number }).status
         : 500
 
     if (errorMessage.toLowerCase().includes("api key not found")) {

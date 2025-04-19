@@ -2,8 +2,10 @@ import { CHAT_SETTING_LIMITS } from "@/lib/chat-setting-limits"
 import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
 import { ChatSettings } from "@/types"
 import { getBase64FromDataURL, getMediaTypeFromDataURL } from "@/lib/utils"
-import Anthropic from "@anthropic-ai/sdk"
-import { AnthropicStream, StreamingTextResponse } from "ai"
+import { StreamingTextResponse } from "ai"
+import { streamText } from "ai"
+import { createAnthropicProvider } from "@/lib/ai/providers"
+import { CoreMessage } from "ai"
 
 // export const runtime = "edge"
 
@@ -19,20 +21,24 @@ export async function POST(request: Request) {
 
     checkApiKey(profile.anthropic_api_key, "Anthropic")
 
-    let ANTHROPIC_FORMATTED_MESSAGES: any = messages.slice(1)
+    // Create Anthropic provider
+    const anthropicProvider = createAnthropicProvider(
+      profile.anthropic_api_key || ""
+    )
 
-    const anthropic = new Anthropic({
-      apiKey: profile.anthropic_api_key || ""
-    })
+    // Extract system message
+    const systemMessage = messages[0].content
 
-    ANTHROPIC_FORMATTED_MESSAGES = ANTHROPIC_FORMATTED_MESSAGES?.map(
-      (message: any) => {
-        // Check if content exists and is an array
+    // Format messages for AI SDK (handle images)
+    const formattedMessages: CoreMessage[] = messages
+      .slice(1)
+      .map((message: any) => {
+        // If content is not an array, return the message as is
         if (!Array.isArray(message?.content)) {
-          // If content is not an array, return the message as is or handle the error
           return message
         }
 
+        // Handle content array (potentially with images)
         return {
           ...message,
           content: message.content.map((content: any) => {
@@ -43,9 +49,9 @@ export async function POST(request: Request) {
               const image_url = content.image_url.url as string
               return {
                 type: "image",
-                source: {
+                image: {
                   type: "base64",
-                  media_type: getMediaTypeFromDataURL(image_url),
+                  mimeType: getMediaTypeFromDataURL(image_url),
                   data: getBase64FromDataURL(image_url)
                 }
               }
@@ -55,22 +61,18 @@ export async function POST(request: Request) {
             }
           })
         }
-      }
-    )
+      })
 
-    const response = await anthropic.messages.create({
-      model: chatSettings.model,
-      messages: ANTHROPIC_FORMATTED_MESSAGES,
+    // Use streamText from AI SDK v4
+    const result = streamText({
+      model: anthropicProvider(chatSettings.model),
+      messages: formattedMessages,
       temperature: chatSettings.temperature,
-      system: messages[0].content,
-      max_tokens:
-        CHAT_SETTING_LIMITS[chatSettings.model].MAX_TOKEN_OUTPUT_LENGTH,
-      stream: true
+      system: systemMessage,
+      maxTokens: CHAT_SETTING_LIMITS[chatSettings.model].MAX_TOKEN_OUTPUT_LENGTH
     })
 
-    const stream = AnthropicStream(response)
-
-    return new StreamingTextResponse(stream)
+    return new StreamingTextResponse(result.textStream)
   } catch (error: any) {
     let errorMessage = error.message || "An unexpected error occurred"
     const errorCode = error.status || 500

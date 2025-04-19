@@ -24,7 +24,7 @@ export const WithTooltip: FC<WithTooltipProps> = ({
   return (
     <TooltipProvider delayDuration={delayDuration}>
       <Tooltip>
-        <TooltipTrigger>{trigger}</TooltipTrigger>
+        <TooltipTrigger asChild>{trigger}</TooltipTrigger>
 
         <TooltipContent side={side}>{display}</TooltipContent>
       </Tooltip>
