@@ -3,7 +3,6 @@ import {
   IconAdjustmentsHorizontal,
   IconBolt,
   IconBooks,
-  IconFile,
   IconMessage,
   IconPencil,
   IconRobotFace,
@@ -26,7 +25,7 @@ export const SidebarSwitcher: FC<SidebarSwitcherProps> = ({
 }) => {
   return (
     <div className="flex flex-col justify-between border-r-2 pb-5">
-      <TabsList className="bg-background grid h-[440px] grid-rows-7">
+      <TabsList className="bg-background grid h-[440px] grid-rows-6">
         <SidebarSwitchItem
           icon={<IconMessage size={SIDEBAR_ICON_SIZE} />}
           contentType="chats"
@@ -48,12 +47,6 @@ export const SidebarSwitcher: FC<SidebarSwitcherProps> = ({
         <SidebarSwitchItem
           icon={<IconSparkles size={SIDEBAR_ICON_SIZE} />}
           contentType="models"
-          onContentTypeChange={onContentTypeChange}
-        />
-
-        <SidebarSwitchItem
-          icon={<IconFile size={SIDEBAR_ICON_SIZE} />}
-          contentType="files"
           onContentTypeChange={onContentTypeChange}
         />
 
