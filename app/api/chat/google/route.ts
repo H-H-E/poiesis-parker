@@ -26,8 +26,8 @@ interface RequestBody {
 
 // Valid Gemini model IDs
 const VALID_GEMINI_MODELS: GoogleLLMID[] = [
-  "gemini-2.0-flash-lite",          // Use the specific lite model
-  "gemini-2.5-pro-preview-03-25"  // Use the specific preview model
+  "gemini-2.0-flash-lite", // Use the specific lite model
+  "gemini-2.5-pro-preview-03-25" // Use the specific preview model
 ]
 
 export async function POST(request: Request) {
@@ -47,8 +47,13 @@ export async function POST(request: Request) {
     }
 
     // Validate model name
-    if (!chatSettings.model || !VALID_GEMINI_MODELS.includes(chatSettings.model as GoogleLLMID)) {
-      throw new Error(`Invalid Gemini model name: ${chatSettings.model}. Valid models are: ${VALID_GEMINI_MODELS.join(", ")}`)
+    if (
+      !chatSettings.model ||
+      !VALID_GEMINI_MODELS.includes(chatSettings.model as GoogleLLMID)
+    ) {
+      throw new Error(
+        `Invalid Gemini model name: ${chatSettings.model}. Valid models are: ${VALID_GEMINI_MODELS.join(", ")}`
+      )
     }
 
     // Convert messages to the format expected by the Google API
@@ -155,12 +160,15 @@ export async function POST(request: Request) {
       errorMessage =
         "Google Gemini API Key is incorrect. Please fix it in your profile settings."
     } else if (errorCode === 404) {
-      const modelName = typeof chatSettings === 'object' && chatSettings.model ? chatSettings.model : 'unknown'
+      const modelName =
+        typeof chatSettings === "object" && chatSettings.model
+          ? chatSettings.model
+          : "unknown"
       errorMessage = `Model not found (404): "${modelName}". Please verify:
 1. The model name is correct and exists in the list of available models.
 2. Your Google Gemini API key has access permissions for this specific model. Check your Google Cloud/AI Studio settings.
 3. The model hasn't been deprecated or renamed (e.g., 'gemini-pro' might now be 'gemini-1.0-pro').
-Original error: ${error instanceof Error ? error.message : 'Unknown error'}`
+Original error: ${error instanceof Error ? error.message : "Unknown error"}`
     }
 
     return new Response(JSON.stringify({ message: errorMessage }), {
